@@ -1,0 +1,35 @@
+# Core ML dependencies
+numpy>=1.21.0
+scikit-learn>=1.0.0
+pandas>=1.3.0
+
+# API framework
+fastapi>=0.100.0
+uvicorn>=0.22.0
+pydantic>=2.0.0
+
+# Logging and monitoring
+structlog>=23.0.0
+sentry-sdk[fastapi]>=1.0.0
+psutil>=5.9.0
+prometheus-client>=0.17.0
+
+# Visualization (optional)
+matplotlib>=3.5.0
+plotly>=5.10.0
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-asyncio>=0.21.0
+httpx>=0.24.0
+
+# Development
+black>=23.0.0
+isort>=5.12.0
+mypy>=1.0.0
+flake8>=6.0.0
+
+# Optional: Time series (for advanced weight prediction)
+# prophet>=1.1.0  # Uncomment for Facebook Prophet support
+# statsmodels>=0.14.0  # Uncomment for ARIMA support
