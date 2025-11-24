@@ -1,0 +1,955 @@
+openapi: 3.0.3
+info:
+  title: Meal Assistant API
+  description: |
+    REST API for the Personal Meal System Tracker - a comprehensive nutrition management platform
+    supporting 7 flexible eating patterns with shopping optimization, inventory management,
+    meal prep coordination, and analytics.
+  version: 1.0.0
+  contact:
+    name: Meal Assistant API Support
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://api.mealassistant.app/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User registration, login, and token management
+  - name: Patterns
+    description: Daily eating pattern selection and management
+  - name: Meals
+    description: Meal logging and tracking
+  - name: Inventory
+    description: Food inventory with expiry tracking
+  - name: Prep
+    description: Meal preparation scheduling and task management
+  - name: Shopping
+    description: Shopping list generation and optimization
+  - name: Analytics
+    description: Pattern effectiveness and adherence metrics
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login endpoint
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        profile:
+          $ref: '#/components/schemas/UserProfile'
+
+    UserProfile:
+      type: object
+      properties:
+        name:
+          type: string
+        weight:
+          type: number
+        height:
+          type: number
+        targetCalories:
+          type: integer
+        targetProtein:
+          type: integer
+
+    PatternType:
+      type: string
+      enum:
+        - traditional
+        - reversed
+        - if_noon
+        - grazing_mini
+        - grazing_platter
+        - big_breakfast
+        - morning_feast
+
+    Pattern:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        patternType:
+          $ref: '#/components/schemas/PatternType'
+        date:
+          type: string
+          format: date
+        config:
+          $ref: '#/components/schemas/PatternConfig'
+        meals:
+          type: array
+          items:
+            $ref: '#/components/schemas/Meal'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PatternConfig:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        totalCalories:
+          type: integer
+        totalProtein:
+          type: integer
+        meals:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              time:
+                type: string
+              calories:
+                type: integer
+              protein:
+                type: integer
+        optimalFor:
+          type: array
+          items:
+            type: string
+
+    Meal:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        index:
+          type: integer
+        name:
+          type: string
+        time:
+          type: string
+        calories:
+          type: integer
+        protein:
+          type: integer
+        status:
+          type: string
+          enum: [pending, completed, partial, skipped]
+        logged:
+          type: string
+          format: date-time
+          nullable: true
+        actualCalories:
+          type: integer
+          nullable: true
+        actualProtein:
+          type: integer
+          nullable: true
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        photoUrl:
+          type: string
+          format: uri
+          nullable: true
+
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+          enum: [protein, carbohydrate, vegetable, fruit, fat, dairy, beverage, condiment, spice, other]
+        quantity:
+          type: number
+        unit:
+          type: string
+          enum: [count, oz, lb, g, kg, cup, tbsp, tsp, ml, l]
+        expiryDate:
+          type: string
+          format: date
+          nullable: true
+        expiryStatus:
+          type: string
+          enum: [fresh, expiring, urgent, expired]
+        location:
+          type: string
+          enum: [pantry, refrigerator, freezer, counter]
+        purchaseDate:
+          type: string
+          format: date
+        purchasePrice:
+          type: number
+          nullable: true
+        store:
+          type: string
+          nullable: true
+
+    PrepSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        patternType:
+          $ref: '#/components/schemas/PatternType'
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrepTask'
+        equipment:
+          type: array
+          items:
+            type: string
+        estimatedDuration:
+          type: integer
+          description: Duration in minutes
+        status:
+          type: string
+          enum: [scheduled, in_progress, completed]
+
+    PrepTask:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        index:
+          type: integer
+        name:
+          type: string
+        duration:
+          type: integer
+          description: Duration in minutes
+        equipment:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [pending, in_progress, completed, skipped]
+
+    ShoppingList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        weekOf:
+          type: string
+          format: date
+        patterns:
+          type: array
+          items:
+            type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShoppingItem'
+        totalEstimated:
+          type: number
+        totalActual:
+          type: number
+          nullable: true
+        status:
+          type: string
+          enum: [active, completed]
+
+    ShoppingItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        category:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+        store:
+          type: string
+          nullable: true
+        estimatedPrice:
+          type: number
+          nullable: true
+        purchased:
+          type: boolean
+        actualPrice:
+          type: number
+          nullable: true
+
+paths:
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                name:
+                  type: string
+                profile:
+                  $ref: '#/components/schemas/UserProfile'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+        '409':
+          description: User already exists
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+        '401':
+          description: Invalid credentials
+
+  /patterns:
+    get:
+      tags: [Patterns]
+      summary: Get all available pattern types
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of pattern configurations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  patterns:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PatternConfig'
+                  count:
+                    type: integer
+
+  /patterns/select:
+    post:
+      tags: [Patterns]
+      summary: Select a pattern for a specific day
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patternType]
+              properties:
+                patternType:
+                  $ref: '#/components/schemas/PatternType'
+                date:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Pattern selected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  pattern:
+                    $ref: '#/components/schemas/Pattern'
+        '409':
+          description: Pattern already selected for this date
+
+  /patterns/{id}/meals:
+    get:
+      tags: [Patterns]
+      summary: Get meal structure for a pattern
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Pattern meal structure
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  patternType:
+                    $ref: '#/components/schemas/PatternType'
+                  date:
+                    type: string
+                    format: date
+                  meals:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Meal'
+                  summary:
+                    type: object
+                    properties:
+                      totalCalories:
+                        type: integer
+                      totalProtein:
+                        type: integer
+                      mealCount:
+                        type: integer
+
+  /patterns/switch:
+    post:
+      tags: [Patterns]
+      summary: Switch to a different pattern mid-day
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [currentPatternId, newPatternType]
+              properties:
+                currentPatternId:
+                  type: string
+                  format: uuid
+                newPatternType:
+                  $ref: '#/components/schemas/PatternType'
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Pattern switched successfully
+
+  /meals/today:
+    get:
+      tags: [Meals]
+      summary: Get current day meals
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Today's meals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  date:
+                    type: string
+                    format: date
+                  patternType:
+                    $ref: '#/components/schemas/PatternType'
+                  meals:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Meal'
+
+  /meals/log:
+    post:
+      tags: [Meals]
+      summary: Log meal with photo, rating
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mealId, status]
+              properties:
+                mealId:
+                  type: string
+                  format: uuid
+                status:
+                  type: string
+                  enum: [completed, partial, skipped]
+                actualCalories:
+                  type: integer
+                actualProtein:
+                  type: integer
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                notes:
+                  type: string
+                photoUrl:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Meal logged successfully
+
+  /meals/{id}/substitute:
+    put:
+      tags: [Meals]
+      summary: Ingredient substitution
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ingredientName, substituteName]
+              properties:
+                ingredientName:
+                  type: string
+                substituteName:
+                  type: string
+                reason:
+                  type: string
+                calorieAdjustment:
+                  type: integer
+                proteinAdjustment:
+                  type: integer
+      responses:
+        '200':
+          description: Substitution recorded
+
+  /inventory:
+    get:
+      tags: [Inventory]
+      summary: Get current inventory with expiry
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: includeExpired
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Inventory items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InventoryItem'
+                  summary:
+                    type: object
+
+  /inventory/batch:
+    post:
+      tags: [Inventory]
+      summary: Bulk inventory updates
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [name, category, quantity, unit]
+      responses:
+        '201':
+          description: Items added to inventory
+
+  /inventory/expiring:
+    get:
+      tags: [Inventory]
+      summary: Items expiring in 48hrs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: hours
+          in: query
+          schema:
+            type: integer
+            default: 48
+      responses:
+        '200':
+          description: Expiring items
+
+  /inventory/consume:
+    post:
+      tags: [Inventory]
+      summary: Auto-deduct from meal logging
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mealId, items]
+              properties:
+                mealId:
+                  type: string
+                  format: uuid
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [inventoryId, quantityUsed]
+      responses:
+        '200':
+          description: Inventory consumed
+
+  /prep/schedule:
+    post:
+      tags: [Prep]
+      summary: Generate prep timeline
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patternType, date]
+              properties:
+                patternType:
+                  $ref: '#/components/schemas/PatternType'
+                date:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Prep schedule created
+
+  /prep/equipment:
+    get:
+      tags: [Prep]
+      summary: Equipment availability check
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Equipment status
+
+  /prep/start:
+    post:
+      tags: [Prep]
+      summary: Start prep session
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sessionId]
+              properties:
+                sessionId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Prep session started
+
+  /prep/task/{id}:
+    put:
+      tags: [Prep]
+      summary: Update task status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pending, in_progress, completed, skipped]
+      responses:
+        '200':
+          description: Task updated
+
+  /prep/conflicts:
+    get:
+      tags: [Prep]
+      summary: Equipment conflict detection
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: patternType
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/PatternType'
+      responses:
+        '200':
+          description: Conflict analysis
+
+  /shopping/generate:
+    get:
+      tags: [Shopping]
+      summary: Auto-generate from patterns
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Generated shopping items
+
+  /shopping/optimize:
+    post:
+      tags: [Shopping]
+      summary: Optimize by store
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [listId, stores]
+              properties:
+                listId:
+                  type: string
+                  format: uuid
+                stores:
+                  type: array
+                  items:
+                    type: string
+                weights:
+                  type: object
+                  properties:
+                    price:
+                      type: number
+                    distance:
+                      type: number
+                    quality:
+                      type: number
+                    time:
+                      type: number
+      responses:
+        '200':
+          description: Optimized shopping list
+
+  /shopping/check/{id}:
+    put:
+      tags: [Shopping]
+      summary: Mark item purchased
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [purchased]
+              properties:
+                purchased:
+                  type: boolean
+                actualPrice:
+                  type: number
+                store:
+                  type: string
+      responses:
+        '200':
+          description: Item status updated
+
+  /analytics/patterns:
+    get:
+      tags: [Analytics]
+      summary: Pattern effectiveness
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: patternType
+          in: query
+          schema:
+            $ref: '#/components/schemas/PatternType'
+      responses:
+        '200':
+          description: Pattern analytics
+
+  /analytics/weight:
+    get:
+      tags: [Analytics]
+      summary: Weight trend data
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Weight trends
+
+  /analytics/adherence:
+    get:
+      tags: [Analytics]
+      summary: Pattern adherence rates
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Adherence analytics
