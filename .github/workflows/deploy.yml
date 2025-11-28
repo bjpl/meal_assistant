@@ -38,7 +38,9 @@ jobs:
 
       - name: Install mobile dependencies
         working-directory: src/mobile
-        run: npm install
+        run: |
+          npm install
+          npx expo install @expo/metro-runtime
 
       - name: Create production environment
         working-directory: src/mobile
