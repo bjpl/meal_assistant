@@ -38,7 +38,11 @@ const NavigationRouter: React.FC = () => {
     );
   }
 
-  return <AppNavigator />;
+  return (
+    <NavigationContainer>
+      <AppNavigator />
+    </NavigationContainer>
+  );
 };
 
 const AppContent: React.FC = () => {
