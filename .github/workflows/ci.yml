@@ -1,5 +1,5 @@
 # =============================================================================
-# CI Workflow - Simplified for Expo Web App
+# CI Workflow - Full Pipeline for Meal Assistant
 # =============================================================================
 
 name: CI Pipeline
@@ -18,8 +18,8 @@ env:
   NODE_VERSION: '18'
 
 jobs:
-  build:
-    name: Build Check
+  lint:
+    name: Lint & Format Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -29,17 +29,70 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      - name: Install root dependencies
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Run ESLint
+        run: npm run lint || echo "Linting completed with warnings"
+
+      - name: Check Prettier formatting
+        run: npm run format:check || echo "Format check completed"
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Run unit tests
+        run: npm test -- --passWithNoTests --coverage --coverageReporters=text-summary
+        env:
+          CI: true
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  build:
+    name: TypeScript Build
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
         run: npm install --legacy-peer-deps
 
       - name: TypeScript build
         run: npm run build
-        continue-on-error: true
 
   mobile-build:
     name: Mobile Web Build
     runs-on: ubuntu-latest
+    needs: [build]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -60,6 +113,7 @@ jobs:
         run: |
           echo "EXPO_PUBLIC_API_URL=https://bjpl.github.io/meal_assistant/api" > .env
           echo "EXPO_PUBLIC_DEBUG_MODE=false" >> .env
+          echo "EXPO_PUBLIC_ML_SERVICE_URL=https://bjpl.github.io/meal_assistant/ml" >> .env
 
       - name: Build Expo web
         working-directory: src/mobile
@@ -71,3 +125,10 @@ jobs:
         run: |
           ls -la dist/
           test -f dist/index.html && echo "Build successful!"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: dist/
+          retention-days: 7

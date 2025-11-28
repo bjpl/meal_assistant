@@ -6,7 +6,6 @@
 import {
   PrepTask,
   Timeline,
-  TimeSlot,
   CleaningTask,
   CleaningPlan,
   CleaningMethod,
@@ -105,10 +104,9 @@ export class CleaningPlanner {
   // Cleaning Task Generation
   // --------------------------------------------------------------------------
 
-  generateCleaningTasks(timeline: Timeline, tasks: PrepTask[]): CleaningTask[] {
+  generateCleaningTasks(timeline: Timeline, _tasks: PrepTask[]): CleaningTask[] {
     const cleaningTasks: CleaningTask[] = [];
     const usedEquipment = new Set<string>();
-    const taskMap = new Map(tasks.map(t => [t.id, t]));
 
     // Track when each piece of equipment is last used
     const lastUsageTime = new Map<string, number>();

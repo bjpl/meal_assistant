@@ -49,16 +49,20 @@ export {
   barcodeScanningService
 } from './barcode.service';
 
+export type { CachedProduct } from './barcode.service';
+
 export {
   InventoryNotificationService,
   inventoryNotificationService
 } from './notifications.service';
 
+export type { Notification, NotificationPreferences } from './notifications.service';
+
 /**
  * InventoryManager - Facade for all inventory operations
  * Provides a unified interface for the inventory management system
  */
-import { inventoryTrackingService, calculateFreshnessStatus } from './tracking.service';
+import { inventoryTrackingService } from './tracking.service';
 import { expiryPreventionService } from './expiry.service';
 import { leftoverManagementService } from './leftovers.service';
 import { predictiveAnalyticsService } from './predictions.service';

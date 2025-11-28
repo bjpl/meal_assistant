@@ -15,7 +15,7 @@ import { inventoryTrackingService } from './tracking.service';
 /**
  * Local barcode cache interface
  */
-interface CachedProduct {
+export interface CachedProduct {
   barcode: string;
   name: string;
   brand?: string;

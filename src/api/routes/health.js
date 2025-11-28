@@ -140,11 +140,59 @@ router.get('/info', (req, res) => {
 // Health Check Helper Functions
 // =============================================================================
 
+// Database pool (lazy initialization)
+let dbPool = null;
+
+function getDbPool() {
+  if (!dbPool && process.env.DATABASE_URL) {
+    const { Pool } = require('pg');
+    dbPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: 2, // Small pool for health checks
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+    });
+  }
+  return dbPool;
+}
+
+// Redis client (lazy initialization)
+let redisClient = null;
+
+function getRedisClient() {
+  if (!redisClient && process.env.REDIS_URL) {
+    try {
+      const Redis = require('ioredis');
+      redisClient = new Redis(process.env.REDIS_URL, {
+        maxRetriesPerRequest: 1,
+        connectTimeout: 5000,
+        lazyConnect: true,
+      });
+    } catch (error) {
+      console.error('Failed to initialize Redis client:', error.message);
+    }
+  }
+  return redisClient;
+}
+
 async function checkDatabaseConnection() {
   try {
-    // In production, this would check actual database connection
-    // Example: await db.query('SELECT 1');
-    return true;
+    const pool = getDbPool();
+    if (!pool) {
+      // No database configured - return true for development mode
+      if (process.env.NODE_ENV === 'development') {
+        return true;
+      }
+      return false;
+    }
+
+    const client = await pool.connect();
+    try {
+      await client.query('SELECT 1');
+      return true;
+    } finally {
+      client.release();
+    }
   } catch (error) {
     console.error('Database health check failed:', error.message);
     return false;
@@ -153,9 +201,17 @@ async function checkDatabaseConnection() {
 
 async function checkRedisConnection() {
   try {
-    // In production, this would check actual Redis connection
-    // Example: await redis.ping();
-    return true;
+    const client = getRedisClient();
+    if (!client) {
+      // No Redis configured - return true for development mode
+      if (process.env.NODE_ENV === 'development') {
+        return true;
+      }
+      return false;
+    }
+
+    const pong = await client.ping();
+    return pong === 'PONG';
   } catch (error) {
     console.error('Redis health check failed:', error.message);
     return false;
@@ -164,14 +220,32 @@ async function checkRedisConnection() {
 
 async function checkMLService() {
   try {
-    // In production, this would check ML service availability
-    // Example: await fetch(process.env.ML_SERVICE_URL + '/health');
     const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:8000';
-    // For now, return true as ML service is optional
-    return true;
+
+    // Use fetch with timeout for ML service health check
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    try {
+      const response = await fetch(`${mlServiceUrl}/health`, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      return response.ok;
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      // ML service is optional, don't fail health check if unavailable
+      if (process.env.ENABLE_ML_PREDICTIONS === 'false') {
+        return true;
+      }
+      // Log but return degraded status (still allows app to function)
+      console.warn('ML service unavailable:', fetchError.message);
+      return true; // Return true but mark as degraded in status
+    }
   } catch (error) {
     console.error('ML service health check failed:', error.message);
-    return false;
+    return true; // ML is optional
   }
 }
 

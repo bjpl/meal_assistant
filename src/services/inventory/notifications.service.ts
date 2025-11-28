@@ -3,7 +3,7 @@
  * Handles push notifications, alerts, and reminders for inventory events
  */
 
-import { ExpiryAlert, InventoryItem, ShoppingListItem } from '../../types/inventory.types';
+import { ShoppingListItem } from '../../types/inventory.types';
 import { expiryPreventionService } from './expiry.service';
 import { predictiveAnalyticsService } from './predictions.service';
 
@@ -26,7 +26,7 @@ type NotificationType =
 /**
  * Notification entry
  */
-interface Notification {
+export interface Notification {
   id: string;
   type: NotificationType;
   title: string;
@@ -47,7 +47,7 @@ interface Notification {
 /**
  * Notification preferences
  */
-interface NotificationPreferences {
+export interface NotificationPreferences {
   enabled: boolean;
   expiryWarnings: boolean;
   expiryWarningHours: number;  // Hours before expiry to notify

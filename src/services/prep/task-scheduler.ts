@@ -310,17 +310,14 @@ export class TaskScheduler {
       const windows = equipmentAvailability.get(eqId);
       if (windows && windows.length > 0) {
         // Find next available window
-        let inWindow = false;
         for (let i = 0; i < windows.length; i += 2) {
           const windowStart = windows[i];
           const windowEnd = windows[i + 1];
           if (startTime >= windowStart && startTime + task.duration <= windowEnd) {
-            inWindow = true;
             break;
           }
           if (startTime < windowStart) {
             startTime = windowStart;
-            inWindow = true;
             break;
           }
         }
@@ -372,7 +369,7 @@ export class TaskScheduler {
   rescheduleTask(
     timeline: Timeline,
     taskId: string,
-    newStartTime: number,
+    _newStartTime: number,
     tasks: PrepTask[]
   ): Timeline {
     const taskMap = new Map(tasks.map(t => [t.id, t]));

@@ -98,12 +98,20 @@ const createPerformanceTestServices = () => {
       },
 
       generatePrepTimeline(tasks: number) {
-        const timeline = [];
+        interface TimelineTask {
+          id: string;
+          name: string;
+          duration: number;
+          dependencies: string[];
+          startTime: Date | null;
+        }
+
+        const timeline: TimelineTask[] = [];
         for (let i = 0; i < tasks; i++) {
           // Simulate dependency resolution
-          const dependencies = timeline
+          const dependencies: string[] = timeline
             .filter(() => Math.random() > 0.7)
-            .map(t => t.id);
+            .map((t: TimelineTask) => t.id);
 
           timeline.push({
             id: `task-${i}`,
@@ -115,11 +123,11 @@ const createPerformanceTestServices = () => {
         }
 
         // Calculate start times (simplified)
-        timeline.forEach((task, i) => {
+        timeline.forEach((task: TimelineTask) => {
           const maxDepEnd = task.dependencies.length > 0
-            ? Math.max(...task.dependencies.map(d => {
-                const dep = timeline.find(t => t.id === d);
-                return dep?.startTime?.getTime() || 0 + (dep?.duration || 0) * 60000;
+            ? Math.max(...task.dependencies.map((depId: string) => {
+                const dep = timeline.find((t: TimelineTask) => t.id === depId);
+                return (dep?.startTime?.getTime() || 0) + (dep?.duration || 0) * 60000;
               }))
             : Date.now();
           task.startTime = new Date(maxDepEnd);

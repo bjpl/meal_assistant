@@ -74,7 +74,7 @@ const createNutritionService = () => ({
     let status = 'on-track';
     if (caloriePercentage > 110) {
       status = 'over-target';
-    } else if (caloriePercentage < 80 && proteinPercentage < 70) {
+    } else if (caloriePercentage < 50 && proteinPercentage < 50) {
       status = 'under-target';
     }
 

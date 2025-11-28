@@ -1,3 +1,9 @@
-node_modules
-dist
-src/mobile
+node_modules/
+dist/
+build/
+coverage/
+*.min.js
+*.min.css
+package-lock.json
+src/mobile/package-lock.json
+src/api/package-lock.json

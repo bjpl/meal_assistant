@@ -127,7 +127,9 @@ const createAnalyticsService = () => {
       const oneMonthAgo = new Date();
       oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
 
-      const monthWeights = weightHistory.filter(e => new Date(e.date) >= oneMonthAgo);
+      const monthWeights = weightHistory
+        .filter(e => new Date(e.date) >= oneMonthAgo)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       const monthMeals = mealHistory.filter(m => new Date(m.date) >= oneMonthAgo);
 
       if (monthWeights.length < 2 || monthMeals.length === 0) return null;
@@ -334,9 +336,16 @@ describe('Analytics and Insights', () => {
     });
 
     it('should track weight trend', () => {
-      service.addWeightEntry({ date: '2024-01-01', weight: 250 });
-      service.addWeightEntry({ date: '2024-01-02', weight: 249 });
-      service.addWeightEntry({ date: '2024-01-03', weight: 248 });
+      const today = new Date();
+      const day1 = new Date(today);
+      day1.setDate(day1.getDate() - 2);
+      const day2 = new Date(today);
+      day2.setDate(day2.getDate() - 1);
+      const day3 = today;
+
+      service.addWeightEntry({ date: day1.toISOString().split('T')[0], weight: 250 });
+      service.addWeightEntry({ date: day2.toISOString().split('T')[0], weight: 249 });
+      service.addWeightEntry({ date: day3.toISOString().split('T')[0], weight: 248 });
 
       const trend = service.getWeightTrend(7);
 
@@ -345,8 +354,12 @@ describe('Analytics and Insights', () => {
     });
 
     it('should identify stable weight', () => {
-      service.addWeightEntry({ date: '2024-01-01', weight: 250 });
-      service.addWeightEntry({ date: '2024-01-02', weight: 250.2 });
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      service.addWeightEntry({ date: yesterday.toISOString().split('T')[0], weight: 250 });
+      service.addWeightEntry({ date: today.toISOString().split('T')[0], weight: 250.2 });
 
       const trend = service.getWeightTrend(7);
 

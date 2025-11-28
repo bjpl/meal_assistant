@@ -51,13 +51,6 @@ const LEFTOVER_SHELF_LIFE: Record<string, number> = {
 };
 
 /**
- * Generate unique ID
- */
-const generateId = (): string => {
-  return `left_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-};
-
-/**
  * LeftoverManagementService class
  * Specialized service for managing meal leftovers
  */

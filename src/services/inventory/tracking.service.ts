@@ -10,8 +10,7 @@ import {
   InventoryStats,
   StorageLocation,
   InventoryCategory,
-  FreshnessStatus,
-  UnitType
+  FreshnessStatus
 } from '../../types/inventory.types';
 
 /**

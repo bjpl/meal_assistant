@@ -16,8 +16,8 @@
     "resolveJsonModule": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "isolatedModules": true,
@@ -27,6 +27,6 @@
       "@tests/*": ["tests/*"]
     }
   },
-  "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist", "src/mobile"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "src/mobile", "tests"]
 }

@@ -100,13 +100,22 @@ export const PriceHistoryScreen: React.FC<PriceHistoryScreenProps> = ({
   }, []);
 
   const handleAddToCart = (quantity: number) => {
-    console.log(`Adding ${quantity} to cart`);
-    // TODO: Dispatch add to cart action
+    // Dispatch add to shopping list action
+    // This would typically dispatch to Redux, but for now navigate to shopping screen
+    navigation?.navigate('Shopping', {
+      addItem: {
+        name: itemName,
+        quantity,
+        store: mockCrossStoreData.find(s => s.isLowestPrice)?.store || 'Costco',
+        price: mockPriceHistory.currentPrice,
+      },
+    });
   };
 
   const handleStoreSelect = (store: string) => {
     setSelectedStore(store);
-    // TODO: Navigate to store details or filter
+    // Navigate to store optimizer filtered by selected store
+    navigation?.navigate('StoreOptimizer', { filterStore: store });
   };
 
   return (

@@ -7,12 +7,10 @@ import {
   InventoryItem,
   ExpiryAlert,
   MealSuggestion,
-  WasteRecord,
-  FreshnessStatus
+  WasteRecord
 } from '../../types/inventory.types';
 import {
-  inventoryTrackingService,
-  calculateFreshnessStatus
+  inventoryTrackingService
 } from './tracking.service';
 
 /**

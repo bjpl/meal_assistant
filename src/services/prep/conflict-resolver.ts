@@ -8,7 +8,6 @@ import {
   Timeline,
   TimeSlot,
   Conflict,
-  ConflictType,
   Resolution,
   PrepConfig,
   DEFAULT_PREP_CONFIG

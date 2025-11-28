@@ -5,14 +5,33 @@
 
 import { jest } from '@jest/globals';
 
+// Type definitions for mocks
+interface HttpResponse {
+  data: Record<string, unknown>;
+  status: number;
+}
+
+interface MockDocument {
+  id?: string;
+  [key: string]: unknown;
+}
+
+interface TimelineTask {
+  id: string;
+  name: string;
+  duration: number;
+  dependencies: string[];
+  startTime: Date | null;
+}
+
 // Mock HTTP client
 export const createMockHttpClient = () => ({
-  get: jest.fn().mockResolvedValue({ data: {}, status: 200 }),
-  post: jest.fn().mockResolvedValue({ data: {}, status: 201 }),
-  put: jest.fn().mockResolvedValue({ data: {}, status: 200 }),
-  delete: jest.fn().mockResolvedValue({ data: {}, status: 204 }),
-  setHeader: jest.fn(),
-  setBaseUrl: jest.fn()
+  get: jest.fn<() => Promise<HttpResponse>>().mockResolvedValue({ data: {}, status: 200 }),
+  post: jest.fn<() => Promise<HttpResponse>>().mockResolvedValue({ data: {}, status: 201 }),
+  put: jest.fn<() => Promise<HttpResponse>>().mockResolvedValue({ data: {}, status: 200 }),
+  delete: jest.fn<() => Promise<HttpResponse>>().mockResolvedValue({ data: {}, status: 204 }),
+  setHeader: jest.fn<(name: string, value: string) => void>(),
+  setBaseUrl: jest.fn<(url: string) => void>()
 });
 
 // Mock Database
@@ -75,32 +94,39 @@ export const createMockDatabase = () => {
 
 // Mock Storage
 export const createMockStorage = () => {
-  const store = new Map<string, any>();
+  const store = new Map<string, unknown>();
 
   return {
-    get: jest.fn().mockImplementation((key: string) => store.get(key)),
-    set: jest.fn().mockImplementation((key: string, value: any) => {
+    get: jest.fn<(key: string) => unknown>().mockImplementation((key: string) => store.get(key)),
+    set: jest.fn<(key: string, value: unknown) => boolean>().mockImplementation((key: string, value: unknown) => {
       store.set(key, value);
       return true;
     }),
-    remove: jest.fn().mockImplementation((key: string) => store.delete(key)),
-    clear: jest.fn().mockImplementation(() => store.clear()),
-    keys: jest.fn().mockImplementation(() => Array.from(store.keys())),
-    has: jest.fn().mockImplementation((key: string) => store.has(key))
+    remove: jest.fn<(key: string) => boolean>().mockImplementation((key: string) => store.delete(key)),
+    clear: jest.fn<() => void>().mockImplementation(() => store.clear()),
+    keys: jest.fn<() => string[]>().mockImplementation(() => Array.from(store.keys())),
+    has: jest.fn<(key: string) => boolean>().mockImplementation((key: string) => store.has(key))
   };
 };
 
 // Mock Notification Service
+interface MockNotification {
+  id: string;
+  sentAt?: Date;
+  scheduledFor?: Date;
+  [key: string]: unknown;
+}
+
 export const createMockNotificationService = () => {
-  const notifications: any[] = [];
-  const scheduled: any[] = [];
+  const notifications: MockNotification[] = [];
+  const scheduled: MockNotification[] = [];
 
   return {
-    send: jest.fn().mockImplementation((notification) => {
+    send: jest.fn<(notification: Record<string, unknown>) => Promise<boolean>>().mockImplementation((notification: Record<string, unknown>) => {
       notifications.push({ ...notification, sentAt: new Date(), id: `notif-${Date.now()}` });
       return Promise.resolve(true);
     }),
-    schedule: jest.fn().mockImplementation((notification, time) => {
+    schedule: jest.fn<(notification: Record<string, unknown>, time: Date) => Promise<string>>().mockImplementation((notification: Record<string, unknown>, time: Date) => {
       const id = `scheduled-${Date.now()}`;
       scheduled.push({ ...notification, scheduledFor: time, id });
       return Promise.resolve(id);
@@ -124,52 +150,65 @@ export const createMockNotificationService = () => {
 
 // Mock Analytics Service
 export const createMockAnalyticsService = () => ({
-  track: jest.fn().mockResolvedValue(undefined),
-  identify: jest.fn().mockResolvedValue(undefined),
-  page: jest.fn().mockResolvedValue(undefined),
-  flush: jest.fn().mockResolvedValue(undefined),
-  getEvents: jest.fn().mockReturnValue([])
+  track: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+  identify: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+  page: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+  flush: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+  getEvents: jest.fn<() => unknown[]>().mockReturnValue([])
 });
 
 // Mock Image Processing Service
+interface MockImage {
+  size: number;
+  width?: number;
+  height?: number;
+  [key: string]: unknown;
+}
+
 export const createMockImageService = () => ({
-  compress: jest.fn().mockImplementation(async (image, quality) => ({
+  compress: jest.fn<(image: MockImage, quality: number) => Promise<MockImage>>().mockImplementation(async (image: MockImage, quality: number) => ({
     ...image,
     compressed: true,
     quality,
     size: Math.round(image.size * quality)
   })),
-  resize: jest.fn().mockImplementation(async (image, width, height) => ({
+  resize: jest.fn<(image: MockImage, width: number, height: number) => Promise<MockImage>>().mockImplementation(async (image: MockImage, width: number, height: number) => ({
     ...image,
     width,
     height
   })),
-  extractText: jest.fn().mockResolvedValue({
+  extractText: jest.fn<() => Promise<{ text: string; confidence: number }>>().mockResolvedValue({
     text: 'Mocked extracted text',
     confidence: 0.95
   }),
-  scanBarcode: jest.fn().mockResolvedValue({
+  scanBarcode: jest.fn<() => Promise<{ code: string; format: string }>>().mockResolvedValue({
     code: '012345678901',
     format: 'UPC-A'
   })
 });
 
 // Mock Timer/Scheduler
+interface TimerEntry {
+  callback: () => void;
+  delay: number;
+  recurring: boolean;
+}
+
 export const createMockTimer = () => {
-  const timers: Map<string, { callback: () => void; delay: number; recurring: boolean }> = new Map();
+  const timers: Map<string, TimerEntry> = new Map();
 
   return {
-    setTimeout: jest.fn().mockImplementation((callback, delay) => {
+    setTimeout: jest.fn<(callback: () => void, delay: number) => string>().mockImplementation((callback: () => void, delay: number) => {
       const id = `timer-${Date.now()}`;
       timers.set(id, { callback, delay, recurring: false });
       return id;
     }),
-    setInterval: jest.fn().mockImplementation((callback, delay) => {
+    setInterval: jest.fn<(callback: () => void, delay: number) => string>().mockImplementation((callback: () => void, delay: number) => {
       const id = `interval-${Date.now()}`;
       timers.set(id, { callback, delay, recurring: true });
       return id;
     }),
-    clear: jest.fn().mockImplementation((id) => timers.delete(id)),
+    clear: jest.fn<(id: string) => boolean>().mockImplementation((id: string) => timers.delete(id)),
     clearAll: jest.fn().mockImplementation(() => timers.clear()),
     executeTimer: (id: string) => {
       const timer = timers.get(id);

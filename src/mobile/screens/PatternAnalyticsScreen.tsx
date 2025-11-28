@@ -141,18 +141,21 @@ export const PatternAnalyticsScreen: React.FC<PatternAnalyticsScreenProps> = ({
   }, []);
 
   const handlePatternSelect = (patternId: PatternId) => {
-    console.log('Pattern selected:', patternId);
-    // TODO: Navigate to pattern detail or apply pattern
+    // Navigate to pattern switch preview with selected pattern
+    navigation?.navigate('PatternSwitchPreview', { patternId });
   };
 
   const handleAcceptRecommendation = (patternId: PatternId) => {
-    console.log('Accepted pattern:', patternId);
-    // TODO: Apply the recommended pattern
+    // Navigate to pattern switch preview to apply the recommendation
+    navigation?.navigate('PatternSwitchPreview', {
+      patternId,
+      isRecommendation: true,
+    });
   };
 
   const handleOverride = () => {
-    console.log('Override recommendation');
-    // TODO: Show pattern selector
+    // Navigate to dashboard where pattern selector is available
+    navigation?.navigate('Dashboard', { showPatternSelector: true });
   };
 
   return (

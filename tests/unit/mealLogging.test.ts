@@ -549,7 +549,10 @@ describe('Meal Logging', () => {
     it('should get meals by calorie range', () => {
       const results = service.getMealsByCalorieRange(300, 500);
 
-      expect(results).toHaveLength(2);
+      // Only Chicken Salad (400 cal) is in the 300-500 range
+      // Mexican Bowl (650) is too high, Protein Shake (200) is too low
+      expect(results).toHaveLength(1);
+      expect(results[0].name).toBe('Chicken Salad');
     });
 
     it('should get high protein meals', () => {

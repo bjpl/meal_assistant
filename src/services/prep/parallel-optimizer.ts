@@ -6,7 +6,6 @@
 import {
   PrepTask,
   Timeline,
-  TimeSlot,
   ParallelSuggestion,
   OptimizationResult,
   PrepConfig,

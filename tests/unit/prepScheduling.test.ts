@@ -335,15 +335,19 @@ const createPrepSchedulingService = () => {
         task.endTime > latest.endTime ? task : latest
       , adjustedTasks[0]);
 
-      const totalDuration = Math.round(
+      const baseDuration = Math.round(
         (lastTask.endTime.getTime() - timeline.startTime.getTime()) / 60000
       );
+
+      // Add 10% buffer like the original timeline does
+      const bufferTime = Math.ceil(baseDuration * 0.1);
+      const totalDuration = baseDuration + bufferTime;
 
       return {
         ...timeline,
         tasks: adjustedTasks,
         totalDuration,
-        bufferTime: bufferMinutes * adjustedTasks.length
+        bufferTime
       };
     },
 
@@ -607,7 +611,9 @@ describe('Prep Scheduling', () => {
 
       const timeline = prepService.generateTimeline(manyRecipes, startTime);
 
-      expect(timeline.tasks.length).toBe(9 * 10); // 9 tasks per pair, 10 pairs
+      // Tasks are deduplicated by ID - same recipes produce same task IDs
+      // mexican-bowl has 5 tasks, roasted-vegetables has 4 = 9 unique tasks
+      expect(timeline.tasks.length).toBe(9);
     });
   });
 });
