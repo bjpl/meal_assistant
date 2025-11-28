@@ -48,12 +48,31 @@ jobs:
           cd src/mobile
           npm ci
 
+      - name: Create production environment
+        run: |
+          cd src/mobile
+          cat > .env << 'EOF'
+          EXPO_PUBLIC_API_URL=https://bjpl.github.io/meal_assistant/api
+          EXPO_PUBLIC_API_TIMEOUT=30000
+          EXPO_PUBLIC_MAX_RETRIES=3
+          EXPO_PUBLIC_CACHE_TTL=300000
+          EXPO_PUBLIC_FEATURE_OFFLINE_MODE=true
+          EXPO_PUBLIC_FEATURE_CACHING=true
+          EXPO_PUBLIC_DEBUG_MODE=false
+          EXPO_PUBLIC_ENABLE_ANALYTICS=false
+          EXPO_PUBLIC_ENABLE_CRASH_REPORTS=false
+          EXPO_PUBLIC_TOKEN_REFRESH_THRESHOLD=300
+          EXPO_PUBLIC_ENABLE_DEBUGGER=false
+          EXPO_PUBLIC_USE_MOCK_API=false
+          EOF
+
       - name: Build Expo web app
         run: |
           cd src/mobile
           npx expo export --platform web --output-dir ../../dist
         env:
           NODE_ENV: production
+          CI: true
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
