@@ -1,0 +1,54 @@
+{
+  "pattern_recommender": {
+    "model": "pattern_recommender",
+    "data_source": "real",
+    "samples": 80,
+    "feature_importance": {
+      "day_of_week": 0.16447185506809597,
+      "day_type": 0.022935459575506297,
+      "weather": 0.13422327239797732,
+      "stress_level": 0.07459673692913536,
+      "activity_level": 0.08181828263286851,
+      "has_morning_workout": 0.05708361794536764,
+      "has_evening_social": 0.0322483636830774,
+      "prev_pattern": 0.13554050444914872,
+      "prev_adherence": 0.24236044279319305,
+      "prev_energy": 0.05472146452562965
+    },
+    "model_path": "/mnt/c/Users/brand/Development/Project_Workspace/active-development/meal_assistant/src/ml/models/pattern_recommender.pkl",
+    "trained_at": "2025-11-23T01:19:50.096454",
+    "version": "1.0.0"
+  },
+  "weight_predictor": {
+    "model": "weight_predictor",
+    "data_source": "real",
+    "weight_entries": 90,
+    "pattern_logs": 90,
+    "data_quality": {
+      "status": "reliable",
+      "message": "Sufficient data for accurate predictions",
+      "can_predict": true,
+      "points_needed": 0,
+      "confidence_status": "high"
+    },
+    "target_weight": 200.0,
+    "model_path": "/mnt/c/Users/brand/Development/Project_Workspace/active-development/meal_assistant/src/ml/models/weight_predictor.pkl",
+    "trained_at": "2025-11-23T01:19:50.128449",
+    "version": "1.0.0"
+  },
+  "ingredient_substitution": {
+    "model": "ingredient_substitution",
+    "total_ingredients": 35,
+    "category_counts": {
+      "protein": 11,
+      "carb": 5,
+      "vegetable": 7,
+      "fat": 6,
+      "flavor": 0,
+      "fruit": 6
+    },
+    "model_path": "/mnt/c/Users/brand/Development/Project_Workspace/active-development/meal_assistant/src/ml/models/ingredient_substitution.pkl",
+    "trained_at": "2025-11-23T01:19:50.141608",
+    "version": "1.0.0"
+  }
+}

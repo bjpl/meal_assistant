@@ -1,0 +1,72 @@
+{
+  "training_timestamp": "2025-11-23T01:19:50.155952",
+  "models_trained": 3,
+  "pattern_recommender": {
+    "algorithm": "Gradient Boosting Classifier",
+    "n_estimators": 100,
+    "max_depth": 5,
+    "learning_rate": 0.1,
+    "features": 10,
+    "classes": 7,
+    "training_samples": 80,
+    "version": "1.0.0",
+    "feature_importance": {
+      "day_of_week": 0.16447185506809597,
+      "day_type": 0.022935459575506297,
+      "weather": 0.13422327239797732,
+      "stress_level": 0.07459673692913536,
+      "activity_level": 0.08181828263286851,
+      "has_morning_workout": 0.05708361794536764,
+      "has_evening_social": 0.0322483636830774,
+      "prev_pattern": 0.13554050444914872,
+      "prev_adherence": 0.24236044279319305,
+      "prev_energy": 0.05472146452562965
+    },
+    "model_file": "pattern_recommender.pkl"
+  },
+  "weight_predictor": {
+    "algorithm": "Ridge Regression with Polynomial Features",
+    "alpha": 1.0,
+    "degree": 2,
+    "features": [
+      "days_since_start",
+      "rolling_avg_weight",
+      "rolling_adherence",
+      "rolling_cal_variance",
+      "weekly_slope"
+    ],
+    "training_entries": 90,
+    "data_quality": {
+      "status": "reliable",
+      "message": "Sufficient data for accurate predictions",
+      "can_predict": true,
+      "points_needed": 0,
+      "confidence_status": "high"
+    },
+    "target_weight_lbs": 200.0,
+    "version": "1.0.0",
+    "model_file": "weight_predictor.pkl"
+  },
+  "ingredient_substitution": {
+    "algorithm": "Content-Based Filtering (Cosine Similarity)",
+    "total_ingredients": 35,
+    "categories": {
+      "protein": 11,
+      "carb": 5,
+      "vegetable": 7,
+      "fat": 6,
+      "flavor": 0,
+      "fruit": 6
+    },
+    "features": [
+      "calories",
+      "protein_g",
+      "carbs_g",
+      "fat_g",
+      "fiber_g",
+      "category_encoding"
+    ],
+    "version": "1.0.0",
+    "model_file": "ingredient_substitution.pkl"
+  }
+}

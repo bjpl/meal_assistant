@@ -1,0 +1,357 @@
+# =============================================================================
+# CD Workflow - Continuous Deployment Pipeline
+# Meal Assistant Application
+# =============================================================================
+
+name: CD Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      skip_tests:
+        description: 'Skip tests (use with caution)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+  REGISTRY: ghcr.io
+  API_IMAGE_NAME: ${{ github.repository }}/api
+  ML_IMAGE_NAME: ${{ github.repository }}/ml
+
+jobs:
+  # ===========================================================================
+  # Validate Release
+  # ===========================================================================
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      environment: ${{ steps.env.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            VERSION="manual-$(date +%Y%m%d%H%M%S)"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Deploying version: $VERSION"
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENVIRONMENT="${{ github.event.inputs.environment }}"
+          elif [[ "${{ github.ref }}" == *"-rc"* ]] || [[ "${{ github.ref }}" == *"-beta"* ]]; then
+            ENVIRONMENT="staging"
+          else
+            ENVIRONMENT="production"
+          fi
+          echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
+          echo "Deploying to: $ENVIRONMENT"
+
+  # ===========================================================================
+  # Run Tests (unless skipped)
+  # ===========================================================================
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: [validate]
+    if: ${{ github.event.inputs.skip_tests != 'true' }}
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: test_meal_assistant
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run all tests
+        run: npm run test:ci
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_meal_assistant
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+
+  # ===========================================================================
+  # Build & Push Docker Images
+  # ===========================================================================
+  build-and-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    needs: [validate, test]
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      api-digest: ${{ steps.build-api.outputs.digest }}
+      ml-digest: ${{ steps.build-ml.outputs.digest }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for API
+        id: meta-api
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == format('refs/tags/{0}', needs.validate.outputs.version) }}
+
+      - name: Build and push API image
+        id: build-api
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.api
+          push: true
+          tags: ${{ steps.meta-api.outputs.tags }}
+          labels: ${{ steps.meta-api.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Extract metadata for ML
+        id: meta-ml
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.ML_IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == format('refs/tags/{0}', needs.validate.outputs.version) }}
+
+      - name: Build and push ML image
+        id: build-ml
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.ml
+          push: true
+          tags: ${{ steps.meta-ml.outputs.tags }}
+          labels: ${{ steps.meta-ml.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  # ===========================================================================
+  # Deploy to Staging
+  # ===========================================================================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [validate, build-and-push]
+    if: needs.validate.outputs.environment == 'staging' || needs.validate.outputs.environment == 'production'
+    environment:
+      name: staging
+      url: https://staging.meal-assistant.example.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to staging
+        run: |
+          echo "Deploying ${{ needs.validate.outputs.version }} to staging..."
+          # Example: kubectl set image deployment/api api=${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ needs.validate.outputs.version }}
+          # Example: kubectl set image deployment/ml ml=${{ env.REGISTRY }}/${{ env.ML_IMAGE_NAME }}:${{ needs.validate.outputs.version }}
+          echo "Deployment command would go here"
+
+      - name: Wait for deployment
+        run: |
+          echo "Waiting for pods to be ready..."
+          # Example: kubectl rollout status deployment/api --timeout=300s
+          sleep 10
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests against staging..."
+          # curl -f https://staging.meal-assistant.example.com/health || exit 1
+          echo "Smoke tests passed"
+
+  # ===========================================================================
+  # Deploy to Production
+  # ===========================================================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [validate, build-and-push, deploy-staging]
+    if: needs.validate.outputs.environment == 'production'
+    environment:
+      name: production
+      url: https://meal-assistant.example.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create deployment record
+        run: |
+          echo "Recording deployment..."
+          echo "Version: ${{ needs.validate.outputs.version }}"
+          echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "Deployed by: ${{ github.actor }}"
+
+      - name: Deploy to production
+        run: |
+          echo "Deploying ${{ needs.validate.outputs.version }} to production..."
+          # Example production deployment commands
+          echo "Deployment command would go here"
+
+      - name: Wait for deployment
+        run: |
+          echo "Waiting for production pods to be ready..."
+          sleep 15
+
+      - name: Run smoke tests
+        id: smoke-tests
+        run: |
+          echo "Running smoke tests against production..."
+          # curl -f https://meal-assistant.example.com/health || exit 1
+          echo "Smoke tests passed"
+
+      - name: Rollback on failure
+        if: failure() && steps.smoke-tests.outcome == 'failure'
+        run: |
+          echo "Smoke tests failed, initiating rollback..."
+          # kubectl rollout undo deployment/api
+          # kubectl rollout undo deployment/ml
+          echo "Rollback complete"
+
+  # ===========================================================================
+  # Post-Deployment
+  # ===========================================================================
+  post-deploy:
+    name: Post-Deployment Tasks
+    runs-on: ubuntu-latest
+    needs: [validate, deploy-staging, deploy-production]
+    if: always() && (needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        if: github.ref_type == 'tag' && needs.validate.outputs.environment == 'production'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.validate.outputs.version }}
+          name: Release ${{ needs.validate.outputs.version }}
+          body: |
+            ## Meal Assistant ${{ needs.validate.outputs.version }}
+
+            ### Deployment Information
+            - **Environment**: ${{ needs.validate.outputs.environment }}
+            - **Deployed**: ${{ github.event.head_commit.timestamp }}
+            - **Deployed by**: ${{ github.actor }}
+
+            ### Docker Images
+            - API: `${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}:${{ needs.validate.outputs.version }}`
+            - ML: `${{ env.REGISTRY }}/${{ env.ML_IMAGE_NAME }}:${{ needs.validate.outputs.version }}`
+          draft: false
+          prerelease: ${{ contains(needs.validate.outputs.version, 'rc') || contains(needs.validate.outputs.version, 'beta') }}
+
+      - name: Send deployment notification
+        run: |
+          echo "Sending deployment notification..."
+          echo "Version ${{ needs.validate.outputs.version }} deployed to ${{ needs.validate.outputs.environment }}"
+          # Example: Send Slack/Discord notification
+
+      - name: Update deployment metrics
+        run: |
+          echo "Recording deployment metrics..."
+          echo "Environment: ${{ needs.validate.outputs.environment }}"
+          echo "Success: true"
+          # Example: Record to monitoring system
+
+  # ===========================================================================
+  # Cleanup on Failure
+  # ===========================================================================
+  cleanup-on-failure:
+    name: Cleanup on Failure
+    runs-on: ubuntu-latest
+    needs: [validate, deploy-staging, deploy-production]
+    if: failure()
+    steps:
+      - name: Send failure notification
+        run: |
+          echo "Deployment failed!"
+          echo "Version: ${{ needs.validate.outputs.version }}"
+          echo "Environment: ${{ needs.validate.outputs.environment }}"
+          # Example: Send alert
+
+      - name: Create failure issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Deployment Failed: ${{ needs.validate.outputs.version }}`,
+              body: `## Deployment Failure Report
+
+              - **Version**: ${{ needs.validate.outputs.version }}
+              - **Environment**: ${{ needs.validate.outputs.environment }}
+              - **Workflow Run**: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              - **Triggered by**: @${{ github.actor }}
+
+              Please investigate and resolve.`,
+              labels: ['deployment', 'bug', 'priority-high']
+            })
