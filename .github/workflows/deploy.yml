@@ -24,9 +24,6 @@ env:
   NODE_VERSION: '18'
 
 jobs:
-  # ===========================================================================
-  # Build Expo Web App
-  # ===========================================================================
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -38,38 +35,31 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install root dependencies
-        run: npm ci
 
       - name: Install mobile dependencies
-        run: |
-          cd src/mobile
-          npm ci
+        working-directory: src/mobile
+        run: npm install
 
       - name: Create production environment
+        working-directory: src/mobile
         run: |
-          cd src/mobile
-          cat > .env << 'EOF'
-          EXPO_PUBLIC_API_URL=https://bjpl.github.io/meal_assistant/api
-          EXPO_PUBLIC_API_TIMEOUT=30000
-          EXPO_PUBLIC_MAX_RETRIES=3
-          EXPO_PUBLIC_CACHE_TTL=300000
-          EXPO_PUBLIC_FEATURE_OFFLINE_MODE=true
-          EXPO_PUBLIC_FEATURE_CACHING=true
-          EXPO_PUBLIC_DEBUG_MODE=false
-          EXPO_PUBLIC_ENABLE_ANALYTICS=false
-          EXPO_PUBLIC_ENABLE_CRASH_REPORTS=false
-          EXPO_PUBLIC_TOKEN_REFRESH_THRESHOLD=300
-          EXPO_PUBLIC_ENABLE_DEBUGGER=false
-          EXPO_PUBLIC_USE_MOCK_API=false
-          EOF
+          echo "EXPO_PUBLIC_API_URL=https://bjpl.github.io/meal_assistant/api" > .env
+          echo "EXPO_PUBLIC_API_TIMEOUT=30000" >> .env
+          echo "EXPO_PUBLIC_MAX_RETRIES=3" >> .env
+          echo "EXPO_PUBLIC_CACHE_TTL=300000" >> .env
+          echo "EXPO_PUBLIC_FEATURE_OFFLINE_MODE=true" >> .env
+          echo "EXPO_PUBLIC_FEATURE_CACHING=true" >> .env
+          echo "EXPO_PUBLIC_DEBUG_MODE=false" >> .env
+          echo "EXPO_PUBLIC_ENABLE_ANALYTICS=false" >> .env
+          echo "EXPO_PUBLIC_ENABLE_CRASH_REPORTS=false" >> .env
+          echo "EXPO_PUBLIC_TOKEN_REFRESH_THRESHOLD=300" >> .env
+          echo "EXPO_PUBLIC_ENABLE_DEBUGGER=false" >> .env
+          echo "EXPO_PUBLIC_USE_MOCK_API=false" >> .env
+          cat .env
 
       - name: Build Expo web app
-        run: |
-          cd src/mobile
-          npx expo export --platform web --output-dir ../../dist
+        working-directory: src/mobile
+        run: npx expo export --platform web --output-dir ../../dist
         env:
           NODE_ENV: production
           CI: true
@@ -82,9 +72,6 @@ jobs:
         with:
           path: './dist'
 
-  # ===========================================================================
-  # Deploy to GitHub Pages
-  # ===========================================================================
   deploy:
     name: Deploy
     environment:
