@@ -39,10 +39,12 @@ module.exports = {
   ],
 
   // Ignore patterns
+  // Note: apiService.test.ts excluded due to memory issues - run separately with test:api-heavy
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/',
-    '/coverage/'
+    '/coverage/',
+    'apiService\\.test\\.ts$'
   ],
 
   // Module name mapping for path aliases and React Native mocks
@@ -67,8 +69,9 @@ module.exports = {
     '\\.(jpg|jpeg|png|gif|svg|ttf|woff|woff2)$': '<rootDir>/tests/__mocks__/fileMock.js'
   },
 
-  // Coverage configuration
-  collectCoverage: true,
+  // Coverage configuration - disabled by default to prevent memory issues
+  // Use --coverage flag when coverage is needed
+  collectCoverage: false,
   coverageDirectory: '<rootDir>/coverage',
   coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
   collectCoverageFrom: [
@@ -109,12 +112,18 @@ module.exports = {
   globalSetup: '<rootDir>/tests/globalSetup.ts',
   globalTeardown: '<rootDir>/tests/globalTeardown.ts',
 
-  // Maximum workers
-  maxWorkers: '50%',
+  // Maximum workers - reduced to prevent heap memory issues
+  maxWorkers: 2,
+
+  // Worker memory limit - restart workers that use too much memory
+  workerIdleMemoryLimit: '512MB',
 
   // Force exit after tests complete
   forceExit: true,
   detectOpenHandles: true,
+
+  // Run tests in isolated processes to prevent memory leaks between tests
+  isolatedModules: true,
 
   // Reporters
   reporters: [
