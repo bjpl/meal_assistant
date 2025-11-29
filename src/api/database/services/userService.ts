@@ -3,8 +3,8 @@
  * Handles all user-related database operations
  */
 
-import { query, transaction } from '../connection';
-import { QueryResult, PoolClient } from 'pg';
+import { query } from '../connection';
+import { QueryResult } from 'pg';
 import { hashPassword, comparePassword } from '../../middleware/auth';
 
 interface User {
@@ -292,8 +292,10 @@ const userService = {
    * Format user object for API response
    * @private
    */
-  _formatUser(row: User | null): FormattedUser | null {
-    if (!row) return null;
+  _formatUser(row: User | null): FormattedUser {
+    if (!row) {
+      throw new Error('Cannot format null user');
+    }
 
     return {
       id: row.id,

@@ -9,7 +9,7 @@
  * - Generating turn-by-turn directions
  */
 
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as _uuidv4 } from 'uuid';
 
 interface Coordinates {
   lat: number;
@@ -86,14 +86,12 @@ export class MapsService {
   private cache: Map<string, { data: any; timestamp: number }>;
   private cacheExpiry: number;
   private isSimulated: boolean;
-  private initialized: boolean;
 
   constructor(apiKey: string | null = null) {
     this.apiKey = apiKey || process.env.GOOGLE_MAPS_API_KEY || null;
     this.cache = new Map();
     this.cacheExpiry = 7 * 24 * 60 * 60 * 1000; // 7 days
     this.isSimulated = !this.apiKey;
-    this.initialized = false;
 
     if (this.isSimulated) {
       console.warn('MapsService: Running in simulated mode (no API key)');
@@ -106,7 +104,7 @@ export class MapsService {
   async initialize(): Promise<void> {
     if (!this.isSimulated && this.apiKey) {
       try {
-        this.initialized = true;
+        // API key validation would happen here in production
       } catch (error) {
         console.warn('MapsService: Failed to initialize, falling back to simulation');
         this.isSimulated = true;

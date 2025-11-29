@@ -4,6 +4,7 @@
  */
 
 import * as Sentry from '@sentry/node';
+import { expressIntegration, expressErrorHandler, httpIntegration } from '@sentry/node';
 import { Express, Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 
 // =============================================================================
@@ -46,19 +47,16 @@ export function initSentry(app?: Express): void {
     // Performance monitoring
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
-    // Session tracking
-    autoSessionTracking: true,
-
     // Integrations
     integrations: [
       // HTTP calls tracing
-      new Sentry.Integrations.Http({ tracing: true }),
+      httpIntegration(),
       // Express middleware tracing
-      ...(app ? [new Sentry.Integrations.Express({ app })] : []),
+      ...(app ? [expressIntegration()] : []),
     ],
 
     // Filter sensitive data
-    beforeSend(event) {
+    beforeSend(event: Sentry.ErrorEvent) {
       // Remove sensitive headers
       if (event.request && event.request.headers) {
         delete event.request.headers.authorization;
@@ -84,23 +82,20 @@ export function initSentry(app?: Express): void {
 
 /**
  * Sentry request handler middleware
- * Add this before your routes
+ * Note: In Sentry v10+, request handling is done via expressIntegration
+ * This function is kept for backwards compatibility but returns a no-op
  */
 export function sentryRequestHandler(): (req: Request, res: Response, next: NextFunction) => void {
-  return Sentry.Handlers.requestHandler({
-    // Include user info in error reports
-    user: ['id', 'email'],
-    // Include IP address
-    ip: true,
-  });
+  return (_req: Request, _res: Response, next: NextFunction) => next();
 }
 
 /**
  * Sentry tracing handler middleware
- * Add this before your routes
+ * Note: In Sentry v10+, tracing is done via expressIntegration
+ * This function is kept for backwards compatibility but returns a no-op
  */
 export function sentryTracingHandler(): (req: Request, res: Response, next: NextFunction) => void {
-  return Sentry.Handlers.tracingHandler();
+  return (_req: Request, _res: Response, next: NextFunction) => next();
 }
 
 /**
@@ -108,10 +103,10 @@ export function sentryTracingHandler(): (req: Request, res: Response, next: Next
  * Add this after your routes, before other error handlers
  */
 export function sentryErrorHandler(): ErrorRequestHandler {
-  return Sentry.Handlers.errorHandler({
-    shouldHandleError(error) {
+  return expressErrorHandler({
+    shouldHandleError(error: Error & { status?: number; statusCode?: number }) {
       // Report all 4xx and 5xx errors
-      const statusCode = (error as any).status || (error as any).statusCode || 500;
+      const statusCode = error.status || error.statusCode || 500;
       return statusCode >= 400;
     },
   });
@@ -125,7 +120,7 @@ export function sentryErrorHandler(): ErrorRequestHandler {
  * Capture exception manually
  */
 export function captureException(error: Error, context: SentryContext = {}): void {
-  Sentry.withScope((scope) => {
+  Sentry.withScope((scope: Sentry.Scope) => {
     if (context.user) {
       scope.setUser(context.user);
     }
@@ -151,7 +146,7 @@ export function captureMessage(
   level: SentryLevel = 'info',
   context: SentryContext = {}
 ): void {
-  Sentry.withScope((scope) => {
+  Sentry.withScope((scope: Sentry.Scope) => {
     scope.setLevel(level);
     if (context.tags) {
       Object.entries(context.tags).forEach(([key, value]) => {

@@ -10,10 +10,6 @@ import { Request, Response } from 'express';
 // Type Definitions
 // =============================================================================
 
-interface LogMeta {
-  [key: string]: any;
-}
-
 interface RequestLogData {
   method: string;
   url: string;

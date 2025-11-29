@@ -4,7 +4,9 @@
  */
 
 import { query, transaction } from '../connection';
-import { QueryResult, PoolClient } from 'pg';
+import { QueryResult } from 'pg';
+
+type PoolClient = any;
 
 interface ShoppingList {
   id: string;
@@ -124,16 +126,16 @@ const shoppingService = {
    * @returns List with items
    */
   async findById(id: string, client: PoolClient | null = null): Promise<any | null> {
-    const db = client || { query };
+    const executeQuery = client ? client.query.bind(client) : query;
 
-    const listResult: QueryResult<ShoppingList> = await db.query(
+    const listResult: QueryResult<ShoppingList> = await executeQuery(
       'SELECT * FROM shopping_lists WHERE id = $1',
       [id]
     );
 
     if (listResult.rows.length === 0) return null;
 
-    const itemsResult: QueryResult<ShoppingListItem> = await db.query(
+    const itemsResult: QueryResult<ShoppingListItem> = await executeQuery(
       'SELECT * FROM shopping_list_items WHERE list_id = $1 ORDER BY category, name',
       [id]
     );

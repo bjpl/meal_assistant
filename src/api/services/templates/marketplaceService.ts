@@ -365,7 +365,7 @@ class MarketplaceService {
   /**
    * Mark a review as helpful
    */
-  async markReviewHelpful(reviewId: string, userId: string): Promise<TemplateReview> {
+  async markReviewHelpful(reviewId: string, _userId: string): Promise<TemplateReview> {
     const review = reviewStore.get(reviewId);
     if (!review) {
       throw new Error('Review not found');

@@ -349,8 +349,8 @@ export class DealQualityService {
    */
   private async calculateStockUpRecommendation(
     dealPrice: number,
-    componentId: string,
-    storeId: string,
+    _componentId: string,
+    _storeId: string,
     qualityScore: number,
     assessment: AssessmentResult,
     options: AssessDealOptions
@@ -416,8 +416,6 @@ export class DealQualityService {
    * Predict next sale date based on historical patterns
    */
   async predictNextSale(componentId: string, storeId: string): Promise<SalePrediction> {
-    const key = `${componentId}-${storeId || 'all'}`;
-
     const history = await priceIntelligenceService.getPriceHistory(componentId, { storeId });
     const deals = history.prices.filter((p: any) => p.isDeal || p.isSalePrice);
 

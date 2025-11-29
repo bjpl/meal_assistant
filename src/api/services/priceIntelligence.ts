@@ -805,10 +805,10 @@ export class PriceIntelligenceService {
   /**
    * Get price drop alerts (items that dropped >20%)
    */
-  async getPriceDropAlerts(userId: string): Promise<PriceDropAlertsResponse> {
+  async getPriceDropAlerts(_userId: string): Promise<PriceDropAlertsResponse> {
     const alerts: PriceDropAlert[] = [];
 
-    for (const [key, trend] of priceStore.trends.entries()) {
+    for (const [_key, trend] of priceStore.trends.entries()) {
       if (trend.avg7Day && trend.avg30Day) {
         const dropPercent = ((trend.avg30Day - trend.avg7Day) / trend.avg30Day) * 100;
 
@@ -842,7 +842,7 @@ export class PriceIntelligenceService {
   private async checkPriceAlerts(componentId: string, storeId: string | null, price: number): Promise<AlertTrigger[]> {
     const alertsToTrigger: AlertTrigger[] = [];
 
-    for (const [id, alert] of priceStore.alerts.entries()) {
+    for (const [_id, alert] of priceStore.alerts.entries()) {
       if (alert.componentId !== componentId) continue;
       if (alert.storeId && alert.storeId !== storeId) continue;
       if (!alert.isActive) continue;
@@ -854,8 +854,8 @@ export class PriceIntelligenceService {
           if (alert.targetPrice && price <= alert.targetPrice) shouldTrigger = true;
           break;
         case 'price_drop':
-          const key = `${componentId}-${storeId || 'all'}`;
-          const trend = priceStore.trends.get(key);
+          const _key = `${componentId}-${storeId || 'all'}`;
+          const trend = priceStore.trends.get(_key);
           if (trend?.avg30Day && alert.percentageDrop) {
             const dropPercent = ((trend.avg30Day - price) / trend.avg30Day) * 100;
             if (dropPercent >= alert.percentageDrop) shouldTrigger = true;
@@ -884,7 +884,7 @@ export class PriceIntelligenceService {
   /**
    * Get overall price tracking statistics
    */
-  async getPriceStats(userId: string): Promise<PriceStatsResponse> {
+  async getPriceStats(_userId: string): Promise<PriceStatsResponse> {
     let totalPrices = 0;
     const totalComponents = new Set<string>();
     const totalStores = new Set<string>();

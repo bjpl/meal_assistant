@@ -255,7 +255,7 @@ export class DealMatcher {
     const itemCategory = this.inferCategory(itemName);
     const dealCategory = this.inferCategory(dealName);
     const categoryMatch = itemCategory && dealCategory && itemCategory === dealCategory;
-    factors.categoryMatch = categoryMatch;
+    factors.categoryMatch = categoryMatch || undefined;
 
     // Calculate final confidence
     if (containment) {

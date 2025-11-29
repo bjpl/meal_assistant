@@ -130,6 +130,7 @@ function createPattern(userId: string, patternType: PatternType, date?: string):
     config,
     meals: config.meals.map((meal, index): Meal => ({
       id: uuidv4(),
+      userId,
       index,
       ...meal,
       status: MealStatus.PENDING,

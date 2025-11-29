@@ -248,12 +248,8 @@ const receiptStore: {
 };
 
 export class ReceiptOcrService {
-  private componentLibrary: Map<string, unknown>;
-  private storeLibrary: Map<string, string>;
-
   constructor() {
-    this.componentLibrary = new Map(); // Should be populated from database
-    this.storeLibrary = new Map();     // Store name -> store ID mapping
+    // Component and store libraries would be populated from database in production
   }
 
   /**
@@ -371,7 +367,7 @@ export class ReceiptOcrService {
    * Extract text from receipt image
    * In production, integrate with Google Vision, AWS Textract, or similar
    */
-  private async extractText(fileUrl: string, fileType: string): Promise<string> {
+  private async extractText(_fileUrl: string, _fileType: string): Promise<string> {
     // Simulated OCR result - in production, call cloud OCR API
     // This would return the raw text extracted from the image
 
@@ -647,7 +643,7 @@ export class ReceiptOcrService {
   /**
    * Match extracted items to component library
    */
-  private async matchToComponents(items: ExtractedItem[], userId: string): Promise<MatchedItem[]> {
+  private async matchToComponents(items: ExtractedItem[], _userId: string): Promise<MatchedItem[]> {
     const matchedItems: MatchedItem[] = [];
 
     for (const item of items) {

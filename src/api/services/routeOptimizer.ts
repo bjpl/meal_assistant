@@ -193,20 +193,6 @@ export interface RouteOptimizerOptions {
   defaultStartTime?: string;
 }
 
-/**
- * Waypoint optimization result
- */
-interface WaypointOptimization {
-  optimizedOrder: number[];
-}
-
-/**
- * Distance result
- */
-interface DistanceResult {
-  distance: { value: number };
-  duration: { value: number };
-}
 
 /**
  * Store group
@@ -219,13 +205,9 @@ type StoreGroup = Store[];
  */
 export class RouteOptimizer {
   private mapsService: MapsService;
-  private maxStopsPerRoute: number;
-  private defaultStartTime: string;
 
   constructor(options: RouteOptimizerOptions = {}) {
     this.mapsService = options.mapsService || new MapsService();
-    this.maxStopsPerRoute = options.maxStopsPerRoute || 5;
-    this.defaultStartTime = options.defaultStartTime || '10:00';
   }
 
   /**
@@ -353,7 +335,12 @@ export class RouteOptimizer {
     startLocation: Location,
     departureTime: Date = new Date()
   ): Promise<DrivingTimeEstimate> {
-    return this.mapsService.estimateDrivingTime(stores, startLocation, departureTime);
+    const estimate = await this.mapsService.estimateDrivingTime(stores, startLocation, departureTime);
+    return {
+      totalDuration: estimate.noTrafficMinutes,
+      withTraffic: estimate.withTrafficMinutes,
+      departure: new Date(estimate.departureTime)
+    };
   }
 
   /**
@@ -584,7 +571,7 @@ export class RouteOptimizer {
   /**
    * Select best route based on criteria
    */
-  private selectBestRoute(routes: TypedRoute[], comparison: RouteComparison): RouteRecommendation {
+  private selectBestRoute(routes: TypedRoute[], _comparison: RouteComparison): RouteRecommendation {
     if (!routes.length) {
       return { recommended: 'none', reason: 'No routes available' };
     }

@@ -3,7 +3,7 @@
  * Handles all meal-related database operations
  */
 
-import { query, transaction } from '../connection';
+import { query } from '../connection';
 import { QueryResult } from 'pg';
 
 interface Meal {

@@ -256,7 +256,7 @@ export class FileStorageService {
   /**
    * Compress image before upload (placeholder for actual implementation)
    */
-  async compressImage(imageData: Buffer, options: { maxWidth?: number; quality?: number } = {}): Promise<Buffer> {
+  async compressImage(imageData: Buffer, _options: { maxWidth?: number; quality?: number } = {}): Promise<Buffer> {
     // In production, use sharp or similar library
     return imageData;
   }

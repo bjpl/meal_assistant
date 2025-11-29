@@ -16,31 +16,41 @@ import hydrationService from './hydrationService';
 const USE_DATABASE = process.env.USE_DATABASE === 'true';
 
 // Export appropriate services based on feature flag
-if (USE_DATABASE) {
-  export {
-    userService,
-    patternService,
-    mealService,
-    inventoryService,
-    prepService,
-    shoppingService,
-    analyticsService,
-    hydrationService
-  };
-} else {
+export default USE_DATABASE ? {
+  userService,
+  patternService,
+  mealService,
+  inventoryService,
+  prepService,
+  shoppingService,
+  analyticsService,
+  hydrationService
+} : (() => {
   // Fall back to in-memory mock services
   const mockServices = require('../../services/dataStore');
-  export const {
-    userService: mockUserService,
-    patternService: mockPatternService,
-    mealService: mockMealService,
-    inventoryService: mockInventoryService,
-    prepService: mockPrepService,
-    shoppingService: mockShoppingService,
-    equipmentService,
-    analyticsService: mockAnalyticsService,
-    hydrationService: mockHydrationService,
-    caffeineService,
-    clearAll
-  } = mockServices;
-}
+  return {
+    userService: mockServices.userService,
+    patternService: mockServices.patternService,
+    mealService: mockServices.mealService,
+    inventoryService: mockServices.inventoryService,
+    prepService: mockServices.prepService,
+    shoppingService: mockServices.shoppingService,
+    equipmentService: mockServices.equipmentService,
+    analyticsService: mockServices.analyticsService,
+    hydrationService: mockServices.hydrationService,
+    caffeineService: mockServices.caffeineService,
+    clearAll: mockServices.clearAll
+  };
+})();
+
+// Named exports for backward compatibility
+export {
+  userService,
+  patternService,
+  mealService,
+  inventoryService,
+  prepService,
+  shoppingService,
+  analyticsService,
+  hydrationService
+};

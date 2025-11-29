@@ -187,6 +187,7 @@ export interface ABTest {
   notes: string;
   store_id?: string;
   analysis?: ABTestAnalysis;
+  rollout?: RolloutConfig;
 }
 
 /**

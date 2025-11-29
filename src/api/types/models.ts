@@ -52,6 +52,7 @@ export interface PatternConfig {
 
 export interface Meal extends MealConfig {
   id: string;
+  userId: string;
   index: number;
   status: MealStatus;
   logged: string | null;
@@ -60,6 +61,14 @@ export interface Meal extends MealConfig {
   rating: number | null;
   notes: string | null;
   photoUrl: string | null;
+  substitutions?: Array<{
+    original: string;
+    replacement: string;
+    reason?: string;
+    calorieAdjustment?: number;
+    proteinAdjustment?: number;
+    timestamp: string;
+  }>;
 }
 
 export interface Pattern {

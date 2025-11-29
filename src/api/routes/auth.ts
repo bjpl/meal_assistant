@@ -3,7 +3,7 @@
  * Handles user registration, login, and token management
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import {
   generateTokenPair,
   refreshAccessToken,
@@ -14,10 +14,6 @@ import {
 import { validate, registerSchema, loginSchema } from '../validators';
 import { userService } from '../services/dataStore';
 import { ApiError } from '../middleware/errorHandler';
-
-interface AuthenticatedRequest extends Request {
-  user: { id: string; email: string; };
-}
 
 const router = Router();
 
@@ -81,8 +77,9 @@ router.post('/login', validate(loginSchema), async (req: Request, res: Response)
  * @desc Get current user profile
  * @access Private
  */
-router.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response) => {
-  const user = await userService.findById(req.user.id);
+router.get('/me', authenticate, async (req: Request, res: Response) => {
+  // After authenticate middleware, req.user is guaranteed to exist
+  const user = await userService.findById(req.user!.id);
   if (!user) {
     throw new ApiError(404, 'User not found');
   }
@@ -130,12 +127,12 @@ router.post('/refresh', async (req: Request, res: Response) => {
  * @desc Logout user and revoke refresh token
  * @access Private
  */
-router.post('/logout', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/logout', authenticate, async (req: Request, res: Response) => {
   const { refreshToken, allDevices } = req.body;
 
   if (allDevices) {
     // Revoke all refresh tokens for user (logout from all devices)
-    revokeAllRefreshTokens(req.user.id);
+    revokeAllRefreshTokens(req.user!.id);
     res.json({
       message: 'Successfully logged out from all devices'
     });
@@ -157,7 +154,7 @@ router.post('/logout', authenticate, async (req: AuthenticatedRequest, res: Resp
  * @desc Change user password
  * @access Private
  */
-router.put('/password', authenticate, async (req: AuthenticatedRequest, res: Response) => {
+router.put('/password', authenticate, async (req: Request, res: Response) => {
   const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword) {
@@ -165,7 +162,7 @@ router.put('/password', authenticate, async (req: AuthenticatedRequest, res: Res
   }
 
   // Verify current password
-  const user = await userService.verifyPassword(req.user.email, currentPassword);
+  const user = await userService.verifyPassword(req.user!.email, currentPassword);
   if (!user) {
     throw new ApiError(401, 'Current password is incorrect');
   }

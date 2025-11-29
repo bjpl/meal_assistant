@@ -525,7 +525,7 @@ class TemplateService {
   /**
    * Simulate extraction using template rules
    */
-  simulateExtraction(template: Template, testData: TestData): ExtractionResults {
+  simulateExtraction(_template: Template, testData: TestData): ExtractionResults {
     const results: ExtractionResults = {
       success: true,
       items: [],

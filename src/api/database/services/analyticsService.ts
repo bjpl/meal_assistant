@@ -163,7 +163,7 @@ const analyticsService = {
    * @param options - Query options
    * @returns Weight trend data
    */
-  async getWeightTrend(userId: string, options: AnalyticsOptions = {}): Promise<any> {
+  async getWeightTrend(userId: string, _options: AnalyticsOptions = {}): Promise<any> {
     // Get current weight from user profile
     const userResult: QueryResult = await query(
       'SELECT current_weight_kg, target_weight_kg FROM users WHERE id = $1',

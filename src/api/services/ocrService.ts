@@ -74,25 +74,23 @@ interface ProcessAdResult {
 
 export class OCRService {
   private templates: Map<string, Template>;
-  private extractionMethods: string[];
 
   constructor() {
     this.templates = new Map();
-    this.extractionMethods = ['regex', 'template', 'ml'];
   }
 
   /**
    * Process an ad file and extract deals
    */
   async processAd(
-    fileUrl: string,
+    _fileUrl: string,
     storeId: string | null = null,
     options: { useML?: boolean } = {}
   ): Promise<ProcessAdResult> {
     const startTime = Date.now();
 
     try {
-      const fileContent = await this.fetchFile(fileUrl);
+      const fileContent = await this.fetchFile(_fileUrl);
       const identifiedStore = storeId || await this.identifyStore(fileContent);
       const template = identifiedStore ? await this.getTemplate(identifiedStore) : null;
       const ocrResult = await this.extractText(fileContent, options);
@@ -125,14 +123,14 @@ export class OCRService {
   /**
    * Fetch file content
    */
-  async fetchFile(fileUrl: string): Promise<Buffer> {
+  async fetchFile(_fileUrl: string): Promise<Buffer> {
     return Buffer.from('mock file content');
   }
 
   /**
    * Identify store from ad image/logo
    */
-  async identifyStore(fileContent: Buffer): Promise<string | null> {
+  async identifyStore(_fileContent: Buffer): Promise<string | null> {
     return null;
   }
 
@@ -146,7 +144,7 @@ export class OCRService {
   /**
    * Extract text from file using OCR
    */
-  async extractText(fileContent: Buffer, options: any = {}): Promise<OCRResult> {
+  async extractText(_fileContent: Buffer, _options: any = {}): Promise<OCRResult> {
     const mockText = this.generateMockAdText();
 
     return {
@@ -331,7 +329,7 @@ export class OCRService {
   /**
    * Phase 3: ML-based deal extraction
    */
-  async extractWithML(text: string): Promise<Deal[]> {
+  async extractWithML(_text: string): Promise<Deal[]> {
     return [];
   }
 

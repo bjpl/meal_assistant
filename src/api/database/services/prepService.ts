@@ -4,7 +4,9 @@
  */
 
 import { query, transaction } from '../connection';
-import { QueryResult, PoolClient } from 'pg';
+import { QueryResult } from 'pg';
+
+type PoolClient = any;
 
 interface PrepSession {
   id: string;
@@ -128,16 +130,16 @@ const prepService = {
    * @returns Session with tasks
    */
   async findById(id: string, client: PoolClient | null = null): Promise<any | null> {
-    const db = client || { query };
+    const executeQuery = client ? client.query.bind(client) : query;
 
-    const sessionResult: QueryResult<PrepSession> = await db.query(
+    const sessionResult: QueryResult<PrepSession> = await executeQuery(
       'SELECT * FROM prep_sessions WHERE id = $1',
       [id]
     );
 
     if (sessionResult.rows.length === 0) return null;
 
-    const tasksResult: QueryResult<PrepTask> = await db.query(
+    const tasksResult: QueryResult<PrepTask> = await executeQuery(
       'SELECT * FROM prep_tasks WHERE session_id = $1 ORDER BY start_time',
       [id]
     );

@@ -3,15 +3,11 @@
  * Endpoints for logging and managing individual meals
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
 import { validate, mealLogSchema, mealSubstituteSchema } from '../validators';
 import { mealService, patternService, inventoryService } from '../services/dataStore';
 import { ApiError } from '../middleware/errorHandler';
-
-interface AuthenticatedRequest extends Request {
-  user: { id: string; email: string; };
-}
 
 const router = Router();
 
@@ -23,16 +19,17 @@ router.use(authenticate);
  * @desc Get all meals for today
  * @access Private
  */
-router.get('/today', (req: AuthenticatedRequest, res: Response) => {
+router.get('/today', (req: Request, res: Response) => {
   const today = new Date().toISOString().split('T')[0];
-  const pattern = patternService.findByUserAndDate(req.user.id, today);
+  const pattern = patternService.findByUserAndDate(req.user!.id, today);
 
   if (!pattern) {
-    return res.json({
+    res.json({
       message: 'No pattern selected for today',
       meals: [],
       patternRequired: true
     });
+    return;
   }
 
   const now = new Date();
@@ -84,14 +81,14 @@ router.get('/today', (req: AuthenticatedRequest, res: Response) => {
  * @desc Get a specific meal by ID
  * @access Private
  */
-router.get('/:id', (req: AuthenticatedRequest, res: Response) => {
+router.get('/:id', (req: Request, res: Response) => {
   const meal = mealService.findById(req.params.id);
 
   if (!meal) {
     throw new ApiError(404, 'Meal not found');
   }
 
-  if (meal.userId !== req.user.id) {
+  if (meal.userId !== req.user!.id) {
     throw new ApiError(403, 'Access denied');
   }
 
@@ -103,7 +100,7 @@ router.get('/:id', (req: AuthenticatedRequest, res: Response) => {
  * @desc Log a meal with details
  * @access Private
  */
-router.post('/log', validate(mealLogSchema), (req: AuthenticatedRequest, res: Response) => {
+router.post('/log', validate(mealLogSchema), (req: Request, res: Response) => {
   const { mealId, status, actualCalories, actualProtein, rating, notes, photoUrl, substitutions } = req.body;
 
   const meal = mealService.findById(mealId);
@@ -111,7 +108,7 @@ router.post('/log', validate(mealLogSchema), (req: AuthenticatedRequest, res: Re
     throw new ApiError(404, 'Meal not found');
   }
 
-  if (meal.userId !== req.user.id) {
+  if (meal.userId !== req.user!.id) {
     throw new ApiError(403, 'Access denied');
   }
 
@@ -134,9 +131,13 @@ router.post('/log', validate(mealLogSchema), (req: AuthenticatedRequest, res: Re
 
   const updatedMeal = mealService.update(mealId, updates);
 
+  if (!updatedMeal) {
+    throw new ApiError(500, 'Failed to update meal');
+  }
+
   // Calculate variance from target
-  const calorieVariance = updatedMeal.actualCalories - meal.calories;
-  const proteinVariance = updatedMeal.actualProtein - meal.protein;
+  const calorieVariance = (updatedMeal.actualCalories ?? 0) - meal.calories;
+  const proteinVariance = (updatedMeal.actualProtein ?? 0) - meal.protein;
 
   res.json({
     message: 'Meal logged successfully',
@@ -154,7 +155,7 @@ router.post('/log', validate(mealLogSchema), (req: AuthenticatedRequest, res: Re
  * @desc Add ingredient substitution to a meal
  * @access Private
  */
-router.put('/:id/substitute', validate(mealSubstituteSchema), (req: AuthenticatedRequest, res: Response) => {
+router.put('/:id/substitute', validate(mealSubstituteSchema), (req: Request, res: Response) => {
   const { ingredientName, substituteName, reason, calorieAdjustment, proteinAdjustment } = req.body;
 
   const meal = mealService.findById(req.params.id);
@@ -162,7 +163,7 @@ router.put('/:id/substitute', validate(mealSubstituteSchema), (req: Authenticate
     throw new ApiError(404, 'Meal not found');
   }
 
-  if (meal.userId !== req.user.id) {
+  if (meal.userId !== req.user!.id) {
     throw new ApiError(403, 'Access denied');
   }
 
@@ -194,21 +195,21 @@ router.put('/:id/substitute', validate(mealSubstituteSchema), (req: Authenticate
  * @desc Get meal component suggestions based on inventory
  * @access Private
  */
-router.get('/:id/suggestions', (req: AuthenticatedRequest, res: Response) => {
+router.get('/:id/suggestions', (req: Request, res: Response) => {
   const meal = mealService.findById(req.params.id);
   if (!meal) {
     throw new ApiError(404, 'Meal not found');
   }
 
-  if (meal.userId !== req.user.id) {
+  if (meal.userId !== req.user!.id) {
     throw new ApiError(403, 'Access denied');
   }
 
   // Get user's current inventory
-  const inventory = inventoryService.findByUser(req.user.id);
+  const inventory = inventoryService.findByUser(req.user!.id);
 
   // Get items expiring soon that could be used
-  const expiringItems = inventoryService.findExpiring(req.user.id, 48);
+  const expiringItems = inventoryService.findExpiring(req.user!.id, 48);
 
   // Categorize available ingredients
   const available = {
@@ -241,7 +242,7 @@ router.get('/:id/suggestions', (req: AuthenticatedRequest, res: Response) => {
  * @desc Mark a meal as skipped
  * @access Private
  */
-router.post('/:id/skip', (req: AuthenticatedRequest, res: Response) => {
+router.post('/:id/skip', (req: Request, res: Response) => {
   const { reason } = req.body;
 
   const meal = mealService.findById(req.params.id);
@@ -249,7 +250,7 @@ router.post('/:id/skip', (req: AuthenticatedRequest, res: Response) => {
     throw new ApiError(404, 'Meal not found');
   }
 
-  if (meal.userId !== req.user.id) {
+  if (meal.userId !== req.user!.id) {
     throw new ApiError(403, 'Access denied');
   }
 

@@ -118,16 +118,12 @@ interface OptimizationOptions {
 
 export class MultiStoreOptimizer {
   private defaultWeights: Weights;
-  private minItemsForMultiStore: number;
-  private maxStoresPerTrip: number;
 
-  constructor(options: {
+  constructor(_options: {
     minItemsForMultiStore?: number;
     maxStoresPerTrip?: number;
   } = {}) {
     this.defaultWeights = WEIGHT_PRESETS.balanced;
-    this.minItemsForMultiStore = options.minItemsForMultiStore || 5;
-    this.maxStoresPerTrip = options.maxStoresPerTrip || 4;
   }
 
   /**
@@ -351,7 +347,7 @@ export class MultiStoreOptimizer {
   /**
    * Calculate savings for an item compared to max price
    */
-  calculateItemSavings(item: ShoppingItem, storeScores: StoreScore[]): number {
+  calculateItemSavings(_item: ShoppingItem, storeScores: StoreScore[]): number {
     if (!storeScores.length) return 0;
 
     const prices = storeScores.map(s => s.price);

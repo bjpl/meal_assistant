@@ -28,14 +28,28 @@ export interface User {
 
 export interface Meal {
   id: string;
+  userId: string;
   index: number;
-  status?: string;
-  actualCalories?: number;
-  actualProtein?: number;
-  rating?: number;
-  logged?: string;
+  name: string;
+  time: string;
+  calories: number;
+  protein: number;
+  status: string;
+  actualCalories?: number | null;
+  actualProtein?: number | null;
+  rating?: number | null;
+  logged?: string | null;
+  notes?: string | null;
+  photoUrl?: string | null;
   patternId?: string;
-  userId?: string;
+  substitutions?: Array<{
+    original: string;
+    replacement: string;
+    reason?: string;
+    calorieAdjustment?: number;
+    proteinAdjustment?: number;
+    timestamp: string;
+  }>;
 }
 
 export interface Pattern {
@@ -597,7 +611,7 @@ export const analyticsService = {
     return stats;
   },
 
-  getWeightTrend(userId: string, options: FindByUserOptions = {}): any {
+  getWeightTrend(_userId: string, _options: FindByUserOptions = {}): any {
     // In a real implementation, this would query weight logs
     // For now, return mock data structure
     return {
@@ -742,7 +756,7 @@ export const hydrationService = {
     return updated;
   },
 
-  getTrends(userId: string, options: any = {}): any {
+  getTrends(userId: string, _options: any = {}): any {
     if (!store.hydrationLogs) return { weekly: [], monthly: [], patterns: {} };
 
     const logs = Array.from(store.hydrationLogs.values())

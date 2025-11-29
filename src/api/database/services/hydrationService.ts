@@ -219,7 +219,7 @@ const hydrationService = {
    * @param options - Query options
    * @returns Trend data
    */
-  async getTrends(userId: string, options: HydrationTrendOptions = {}): Promise<any> {
+  async getTrends(userId: string, _options: HydrationTrendOptions = {}): Promise<any> {
     const result: QueryResult = await query(
       `SELECT
         DATE(logged_at) as date,

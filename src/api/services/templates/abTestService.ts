@@ -4,7 +4,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { createABTest, TemplateStatus, Template, ABTest, ABTestConfig, ABTestAnalysis, RolloutConfig } from './templateTypes';
+import { createABTest, TemplateStatus, ABTest, ABTestConfig, ABTestAnalysis, RolloutConfig } from './templateTypes';
 import templateService from './templateService';
 
 // In-memory storage for A/B tests
