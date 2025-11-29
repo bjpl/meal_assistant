@@ -67,6 +67,7 @@
     "@types/pg": "^8.15.6",
     "@types/react-native": "^0.72.8",
     "@types/uuid": "^10.0.0",
+    "@types/winston": "^2.4.4",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.56.0",

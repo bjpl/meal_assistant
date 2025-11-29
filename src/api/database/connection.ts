@@ -3,10 +3,25 @@
  * Provides connection pooling and query utilities for the API
  */
 
-import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
+import { Pool, PoolClient, PoolConfig, QueryResult, QueryResultRow } from 'pg';
+
+/**
+ * Database configuration interface
+ */
+export interface DatabaseConfig extends PoolConfig {
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
+  max: number;
+  idleTimeoutMillis: number;
+  connectionTimeoutMillis: number;
+  ssl: boolean | { rejectUnauthorized: boolean };
+}
 
 // Database configuration from environment variables
-const config = {
+const config: DatabaseConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432', 10),
   database: process.env.DB_NAME || 'meal_assistant',
@@ -56,8 +71,9 @@ export async function query<T extends QueryResultRow = any>(
     }
 
     return result;
-  } catch (error: any) {
-    console.error('Database query error:', { text: text.substring(0, 100), error: error.message });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Database query error:', { text: text.substring(0, 100), error: errorMessage });
     throw error;
   }
 }
@@ -65,8 +81,8 @@ export async function query<T extends QueryResultRow = any>(
 /**
  * Extended pool client interface with release tracking
  */
-interface ExtendedPoolClient extends PoolClient {
-  release: () => void;
+export interface ExtendedPoolClient extends PoolClient {
+  release: (err?: Error | boolean) => void;
 }
 
 /**
@@ -83,11 +99,11 @@ export async function getClient(): Promise<ExtendedPoolClient> {
   }, 30000);
 
   // Wrap release to clear timeout
-  client.release = () => {
+  client.release = (err?: Error | boolean) => {
     clearTimeout(timeout);
     client.query = originalQuery;
     client.release = originalRelease;
-    return originalRelease();
+    return originalRelease(err);
   };
 
   return client;
@@ -115,7 +131,7 @@ export async function transaction<T>(callback: (client: PoolClient) => Promise<T
 /**
  * Database health check result
  */
-interface HealthCheckResult {
+export interface HealthCheckResult {
   healthy: boolean;
   timestamp?: Date;
   poolSize?: number;
@@ -137,10 +153,11 @@ export async function healthCheck(): Promise<HealthCheckResult> {
       idleCount: pool.idleCount,
       waitingCount: pool.waitingCount
     };
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return {
       healthy: false,
-      error: error.message
+      error: errorMessage
     };
   }
 }
