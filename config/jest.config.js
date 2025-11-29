@@ -15,12 +15,20 @@ module.exports = {
   // Module file extensions
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 
-  // Transform TypeScript files
+  // Transform TypeScript and JSX files
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: path.resolve(__dirname, '..', 'tsconfig.json')
+    }],
+    '^.+\\.(js|jsx)$': ['ts-jest', {
       tsconfig: path.resolve(__dirname, '..', 'tsconfig.json')
     }]
   },
+
+  // Transform React Native and mobile packages in node_modules
+  transformIgnorePatterns: [
+    'node_modules/(?!(react-native|@react-native|@expo|expo|react-native-web|@react-native-async-storage)/)'
+  ],
 
   // Test patterns - include both .ts and .js test files
   testMatch: [
@@ -37,10 +45,26 @@ module.exports = {
     '/coverage/'
   ],
 
-  // Module name mapping for path aliases
+  // Module name mapping for path aliases and React Native mocks
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@tests/(.*)$': '<rootDir>/tests/$1'
+    '^@tests/(.*)$': '<rootDir>/tests/$1',
+    // Mock React Native modules
+    '^react-native$': 'react-native-web',
+    '^@react-native-async-storage/async-storage$': '<rootDir>/tests/__mocks__/async-storage.js',
+    '^@react-native-community/netinfo$': '<rootDir>/tests/__mocks__/netinfo.js',
+    '^expo-notifications$': '<rootDir>/tests/__mocks__/expo-notifications.js',
+    '^expo-constants$': '<rootDir>/tests/__mocks__/expo-constants.js',
+    '^expo-linear-gradient$': '<rootDir>/tests/__mocks__/expo-linear-gradient.js',
+    '^expo-device$': '<rootDir>/tests/__mocks__/expo-constants.js',
+    // Mock Redux and store
+    '^redux-persist$': '<rootDir>/tests/__mocks__/redux-persist.js',
+    '^redux-persist/(.*)$': '<rootDir>/tests/__mocks__/redux-persist.js',
+    // Mock the mobile store
+    '^.*/mobile/store$': '<rootDir>/tests/__mocks__/store.js',
+    '^.*/mobile/store/index$': '<rootDir>/tests/__mocks__/store.js',
+    // Mock image and asset imports
+    '\\.(jpg|jpeg|png|gif|svg|ttf|woff|woff2)$': '<rootDir>/tests/__mocks__/fileMock.js'
   },
 
   // Coverage configuration
