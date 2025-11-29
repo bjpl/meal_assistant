@@ -46,7 +46,7 @@ export const QuickLogWidget: React.FC<QuickLogWidgetProps> = ({
   if (compact) {
     return (
       <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-        <Card variant="outlined" style={[styles.compactContainer, style]}>
+        <Card variant="outlined" style={StyleSheet.flatten([styles.compactContainer, style])}>
           <View style={styles.compactHeader}>
             <Text style={styles.compactIcon}>{'\u{1F4A7}'}</Text>
             <View style={styles.compactInfo}>
@@ -70,7 +70,7 @@ export const QuickLogWidget: React.FC<QuickLogWidgetProps> = ({
   return (
     <Card
       variant="elevated"
-      style={[styles.container, style]}
+      style={StyleSheet.flatten([styles.container, style])}
       onPress={onPress}
     >
       <View style={styles.header}>

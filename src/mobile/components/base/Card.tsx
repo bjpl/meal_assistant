@@ -12,6 +12,7 @@ export interface CardProps {
   variant?: 'elevated' | 'outlined' | 'filled';
   padding?: 'none' | 'small' | 'medium' | 'large';
   onPress?: () => void;
+  onLongPress?: () => void;
   style?: ViewStyle;
   accentColor?: string;
   disabled?: boolean;
@@ -22,6 +23,7 @@ export const Card: React.FC<CardProps> = ({
   variant = 'elevated',
   padding = 'medium',
   onPress,
+  onLongPress,
   style,
   accentColor,
   disabled = false,
@@ -61,19 +63,20 @@ export const Card: React.FC<CardProps> = ({
     }
   };
 
-  const cardStyles: ViewStyle[] = [
+  const cardStyles = [
     styles.card,
     getVariantStyles(),
     { padding: getPadding() },
     accentColor ? { borderLeftWidth: 4, borderLeftColor: accentColor } : {},
     disabled ? styles.disabled : {},
     style,
-  ];
+  ].filter((s): s is ViewStyle => s !== undefined);
 
-  if (onPress) {
+  if (onPress || onLongPress) {
     return (
       <TouchableOpacity
         onPress={onPress}
+        onLongPress={onLongPress}
         disabled={disabled}
         activeOpacity={0.7}
         style={cardStyles}

@@ -56,7 +56,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
 
   if (compact) {
     return (
-      <Card onPress={onPress} variant="outlined" style={[styles.compactCard, style]}>
+      <Card onPress={onPress} variant="outlined" style={StyleSheet.flatten([styles.compactCard, style])}>
         <View style={styles.compactContent}>
           <View style={styles.compactInfo}>
             <Text style={styles.compactName} numberOfLines={1}>
@@ -74,7 +74,7 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
   }
 
   return (
-    <Card onPress={onPress} variant="elevated" style={[styles.card, style]}>
+    <Card onPress={onPress} variant="elevated" style={StyleSheet.flatten([styles.card, style])}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
           <Text style={styles.name} numberOfLines={2}>

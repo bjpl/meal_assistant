@@ -8,7 +8,7 @@ import {
   Modal,
   Dimensions,
 } from 'react-native';
-import { Camera, CameraView, CameraType } from 'expo-camera';
+import { Camera, CameraType } from 'expo-camera';
 import { Button } from '../base/Button';
 import { IconButton } from '../base/IconButton';
 import { colors, spacing, borderRadius } from '../../utils/theme';
@@ -27,9 +27,9 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
   visible,
 }) => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [facing, setFacing] = useState<CameraType>('back');
+  const [facing, setFacing] = useState<CameraType>(CameraType.back);
   const [previewUri, setPreviewUri] = useState<string | null>(null);
-  const cameraRef = useRef<CameraView>(null);
+  const cameraRef = useRef<Camera>(null);
 
   React.useEffect(() => {
     (async () => {
@@ -62,7 +62,7 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
   };
 
   const toggleCameraFacing = () => {
-    setFacing(current => (current === 'back' ? 'front' : 'back'));
+    setFacing((current) => (current === CameraType.back ? CameraType.front : CameraType.back));
   };
 
   if (hasPermission === null) {
@@ -118,10 +118,10 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
           </View>
         ) : (
           // Camera Mode
-          <CameraView
+          <Camera
             ref={cameraRef}
             style={styles.camera}
-            facing={facing}
+            type={facing}
           >
             {/* Guide Overlay */}
             <View style={styles.guideOverlay}>
@@ -170,7 +170,7 @@ export const PhotoCapture: React.FC<PhotoCaptureProps> = ({
                 Tip: Good lighting helps with nutrition detection
               </Text>
             </View>
-          </CameraView>
+          </Camera>
         )}
       </View>
     </Modal>

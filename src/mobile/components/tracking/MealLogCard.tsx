@@ -120,7 +120,7 @@ export const MealLogCard: React.FC<MealLogCardProps> = ({
                 <StarRating
                   rating={log.satisfaction}
                   size={14}
-                  disabled
+                  readOnly
                 />
               </View>
             </View>
@@ -201,7 +201,7 @@ export const MealLogCard: React.FC<MealLogCardProps> = ({
 
         <View style={styles.metricRow}>
           <Text style={styles.metricLabel}>Satisfaction</Text>
-          <StarRating rating={log.satisfaction} size={18} disabled />
+          <StarRating rating={log.satisfaction} size={18} readOnly />
         </View>
 
         <View style={styles.metricRow}>

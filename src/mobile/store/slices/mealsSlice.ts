@@ -62,7 +62,7 @@ export const updateMealAsync = createAsyncThunk(
     if (response.error) {
       return rejectWithValue(response.message || response.error);
     }
-    return { mealId, updates, ...response.data };
+    return { mealId, updates, ...(response.data as Record<string, unknown>) };
   }
 );
 
@@ -71,7 +71,7 @@ export const updateMealAsync = createAsyncThunk(
  */
 export const fetchMealHistory = createAsyncThunk(
   'meals/fetchMealHistory',
-  async (options?: { startDate?: string; endDate?: string }, { rejectWithValue }) => {
+  async (options: { startDate?: string; endDate?: string } | undefined, { rejectWithValue }) => {
     const response = await mealsApi.getMealHistory(options);
     if (response.error) {
       return rejectWithValue(response.message || response.error);

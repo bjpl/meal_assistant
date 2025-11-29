@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  ViewStyle,
 } from 'react-native';
 import { Card } from '../base/Card';
 import { Badge } from '../base/Badge';
@@ -177,10 +178,10 @@ export const ParallelTaskView: React.FC<ParallelTaskViewProps> = ({
                     key={task.id}
                     onPress={() => onTaskPress && onTaskPress(task.id)}
                     variant="filled"
-                    style={[
+                    style={StyleSheet.flatten([
                       styles.taskCard,
                       { borderLeftColor: taskColor },
-                    ]}
+                    ])}
                   >
                     <View style={styles.taskHeader}>
                       <Text

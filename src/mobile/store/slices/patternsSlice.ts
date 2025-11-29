@@ -207,7 +207,7 @@ export const fetchUserPreferences = createAsyncThunk<
     if (response.error) {
       return rejectWithValue(response.message || response.error);
     }
-    return response.data;
+    return response.data as { defaultPattern?: PatternId; weeklySchedule?: { [date: string]: PatternId } } | undefined;
   }
 );
 

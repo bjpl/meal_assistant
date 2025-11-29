@@ -108,7 +108,7 @@ export const FirstWeekScreen: React.FC<FirstWeekScreenProps> = ({ navigation }) 
           time: breakfastTime || '07:30',
           calories: Math.round((usePattern.meals.morning.calories / patternTotalCalories) * targets.dailyCalories),
           protein: Math.round((usePattern.meals.morning.protein / patternTotalProtein) * targets.dailyProtein),
-          description: usePattern.meals.morning.name || 'Breakfast',
+          description: 'Breakfast',
         });
       }
 
@@ -120,7 +120,7 @@ export const FirstWeekScreen: React.FC<FirstWeekScreenProps> = ({ navigation }) 
           time: onboarding.mealTimes.lunch || '12:00',
           calories: Math.round((usePattern.meals.noon.calories / patternTotalCalories) * targets.dailyCalories),
           protein: Math.round((usePattern.meals.noon.protein / patternTotalProtein) * targets.dailyProtein),
-          description: isPlatterPattern ? 'Lunch Platter' : (usePattern.meals.noon.name || 'Lunch'),
+          description: isPlatterPattern ? 'Lunch Platter' : 'Lunch',
         });
       }
 
@@ -132,7 +132,7 @@ export const FirstWeekScreen: React.FC<FirstWeekScreenProps> = ({ navigation }) 
           time: onboarding.mealTimes.dinner || '18:30',
           calories: Math.round((usePattern.meals.evening.calories / patternTotalCalories) * targets.dailyCalories),
           protein: Math.round((usePattern.meals.evening.protein / patternTotalProtein) * targets.dailyProtein),
-          description: isPlatterPattern ? 'Dinner Platter' : (usePattern.meals.evening.name || 'Dinner'),
+          description: isPlatterPattern ? 'Dinner Platter' : 'Dinner',
         });
       }
 
@@ -199,7 +199,7 @@ export const FirstWeekScreen: React.FC<FirstWeekScreenProps> = ({ navigation }) 
         </View>
 
         {/* Summary Card */}
-        <Card variant="filled" style={[styles.summaryCard, { backgroundColor: `${patternColor}20` }]}>
+        <Card variant="filled" style={StyleSheet.flatten([styles.summaryCard, { backgroundColor: `${patternColor}20` }])}>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
               <Text style={[styles.summaryValue, { color: patternColor }]}>
@@ -271,7 +271,7 @@ export const FirstWeekScreen: React.FC<FirstWeekScreenProps> = ({ navigation }) 
           onPress={handleStartJourney}
           size="large"
           fullWidth
-          style={[styles.startButton, { backgroundColor: patternColor }]}
+          style={StyleSheet.flatten([styles.startButton, { backgroundColor: patternColor }])}
         />
 
         {/* Quick Start Alternative */}

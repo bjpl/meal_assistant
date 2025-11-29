@@ -46,6 +46,8 @@ export const getRemainingMeals = (
 
   mealTypes.forEach(mealType => {
     const meal = pattern.meals[mealType];
+    if (!meal) return;
+
     const mealHour = parseTimeToHour(meal.time);
 
     // Include meal if:
@@ -89,6 +91,8 @@ export const calculateRecalculatedMeals = (
   mealTypes.forEach(mealType => {
     const currentMeal = currentPattern.meals[mealType];
     const newMeal = newPattern.meals[mealType];
+    if (!currentMeal || !newMeal) return;
+
     const mealHour = parseTimeToHour(newMeal.time);
 
     const isRemaining = newMeal.time === 'Flexible' ||

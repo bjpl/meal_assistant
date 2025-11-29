@@ -264,15 +264,15 @@ export const DashboardScreen: React.FC = () => {
                         {meal.charAt(0).toUpperCase() + meal.slice(1)}
                       </Text>
                       <Text style={styles.mealTime}>
-                        {todayPattern.meals[meal].time}
+                        {todayPattern.meals[meal]?.time}
                       </Text>
                     </View>
                     <View style={styles.mealNutrition}>
                       <Text style={styles.mealCalories}>
-                        {todayPattern.meals[meal].calories} cal
+                        {todayPattern.meals[meal]?.calories} cal
                       </Text>
                       <Text style={styles.mealProtein}>
-                        {todayPattern.meals[meal].protein}g protein
+                        {todayPattern.meals[meal]?.protein}g protein
                       </Text>
                     </View>
                     <View
@@ -310,10 +310,10 @@ export const DashboardScreen: React.FC = () => {
                 key={pattern.id}
                 onPress={() => setSelectedPattern(pattern.id)}
                 accentColor={colors.patterns[pattern.id]}
-                style={[
+                style={StyleSheet.flatten([
                   styles.miniPatternCard,
                   selectedPattern === pattern.id && styles.miniPatternCardSelected,
-                ]}
+                ])}
               >
                 <Text
                   style={[

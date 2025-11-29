@@ -124,10 +124,10 @@ const calculateRoute = (
   let order = 1;
 
   while (visited.size < storesWithItems.length) {
-    let nearestStore: Store | null = null;
+    let nearestStore: Store | undefined = undefined;
     let nearestDistance = Infinity;
 
-    storesWithItems.forEach(store => {
+    for (const store of storesWithItems) {
       if (!visited.has(store.id)) {
         const distance = Math.sqrt(
           Math.pow(store.coordinates.latitude - currentLocation.latitude, 2) +
@@ -139,31 +139,32 @@ const calculateRoute = (
           nearestStore = store;
         }
       }
-    });
+    }
 
     if (nearestStore) {
-      visited.add(nearestStore.id);
+      const store = nearestStore; // Create const for proper narrowing
+      visited.add(store.id);
       totalDistance += nearestDistance;
-      totalDuration += nearestStore.estimatedTime + (nearestDistance * 2); // 2 min/mile
+      totalDuration += store.estimatedTime + (nearestDistance * 2); // 2 min/mile
 
       const storeItems = items.filter(
-        item => assignments[nearestStore!.id]?.includes(item.id)
+        item => assignments[store.id]?.includes(item.id)
       );
       const storeSpend = storeItems.reduce((sum, item) => sum + item.price, 0);
       totalSpend += storeSpend;
 
       route.push({
-        storeId: nearestStore.id,
-        storeName: nearestStore.name,
+        storeId: store.id,
+        storeName: store.name,
         order: order++,
         estimatedArrival: new Date(Date.now() + totalDuration * 60000).toISOString(),
-        estimatedDuration: nearestStore.estimatedTime,
-        itemCount: assignments[nearestStore.id]?.length || 0,
+        estimatedDuration: store.estimatedTime,
+        itemCount: assignments[store.id]?.length || 0,
         estimatedSpend: storeSpend,
-        coordinates: nearestStore.coordinates,
+        coordinates: store.coordinates,
       });
 
-      currentLocation = nearestStore.coordinates;
+      currentLocation = store.coordinates;
     }
   }
 

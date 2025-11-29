@@ -86,7 +86,7 @@ export const ComponentList: React.FC<ComponentListProps> = ({
     return (
       <Card
         variant={isSelected ? 'elevated' : 'outlined'}
-        style={[styles.componentCard, !isSelected && styles.componentCardDeselected]}
+        style={StyleSheet.flatten([styles.componentCard, !isSelected && styles.componentCardDeselected])}
       >
         <View style={styles.componentRow}>
           {/* Toggle Button */}
@@ -157,8 +157,8 @@ export const ComponentList: React.FC<ComponentListProps> = ({
             <Slider
               value={portion * 100}
               onValueChange={(value) => handlePortionChange(item.id, value)}
-              minimumValue={25}
-              maximumValue={200}
+              min={25}
+              max={200}
               step={25}
               label="Portion"
               leftLabel="1/4"

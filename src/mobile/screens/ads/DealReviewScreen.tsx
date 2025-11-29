@@ -216,11 +216,11 @@ export const DealReviewScreen: React.FC<DealReviewScreenProps> = ({
         <Card
           key={deal.id}
           variant={deal.status === 'pending' ? 'outlined' : 'filled'}
-          style={[
+          style={StyleSheet.flatten([
             styles.listCard,
             deal.status === 'confirmed' && styles.listCardConfirmed,
             deal.status === 'rejected' && styles.listCardRejected,
-          ]}
+          ])}
         >
           <View style={styles.listCardHeader}>
             <ConfidenceIndicator

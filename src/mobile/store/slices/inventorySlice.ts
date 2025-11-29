@@ -22,7 +22,7 @@ const initialState: InventoryState = {
 
 export const fetchInventory = createAsyncThunk(
   'inventory/fetchInventory',
-  async (options?: { category?: string; location?: string }, { rejectWithValue }) => {
+  async (options: { category?: string; location?: string } | undefined, { rejectWithValue }) => {
     const response = await inventoryApi.getAll(options);
     if (response.error) {
       return rejectWithValue(response.message || response.error);

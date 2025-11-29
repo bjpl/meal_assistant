@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Card } from '../base/Card';
 import { Badge } from '../base/Badge';
 import { ExpiryIndicator } from './ExpiryIndicator';
@@ -70,7 +70,7 @@ export const InventoryItemComponent: React.FC<InventoryItemProps> = ({
     <Card
       onPress={onPress}
       variant={isSelected ? 'elevated' : 'outlined'}
-      style={[styles.card, isSelected && styles.selectedCard]}
+      style={[styles.card, isSelected && styles.selectedCard] as ViewStyle}
     >
       <View style={styles.mainContent}>
         <Text style={styles.icon}>{getCategoryIcon(item.category)}</Text>

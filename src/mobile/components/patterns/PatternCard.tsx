@@ -43,10 +43,10 @@ export const PatternCard: React.FC<PatternCardProps> = ({
       onPress={onPress}
       variant={isSelected ? 'elevated' : 'outlined'}
       accentColor={patternColor}
-      style={[
+      style={StyleSheet.flatten([
         styles.card,
         isSelected && { borderColor: patternColor, borderWidth: 2 },
-      ]}
+      ])}
     >
       <View style={styles.header}>
         <View style={styles.titleRow}>
@@ -77,18 +77,18 @@ export const PatternCard: React.FC<PatternCardProps> = ({
 
       <View style={styles.mealsPreview}>
         <View style={styles.mealSlot}>
-          <Text style={styles.mealTime}>{pattern.meals.morning.time}</Text>
-          <Text style={styles.mealCals}>{pattern.meals.morning.calories} cal</Text>
+          <Text style={styles.mealTime}>{pattern.meals.morning?.time}</Text>
+          <Text style={styles.mealCals}>{pattern.meals.morning?.calories} cal</Text>
         </View>
         <View style={styles.mealDivider} />
         <View style={styles.mealSlot}>
-          <Text style={styles.mealTime}>{pattern.meals.noon.time}</Text>
-          <Text style={styles.mealCals}>{pattern.meals.noon.calories} cal</Text>
+          <Text style={styles.mealTime}>{pattern.meals.noon?.time}</Text>
+          <Text style={styles.mealCals}>{pattern.meals.noon?.calories} cal</Text>
         </View>
         <View style={styles.mealDivider} />
         <View style={styles.mealSlot}>
-          <Text style={styles.mealTime}>{pattern.meals.evening.time}</Text>
-          <Text style={styles.mealCals}>{pattern.meals.evening.calories} cal</Text>
+          <Text style={styles.mealTime}>{pattern.meals.evening?.time}</Text>
+          <Text style={styles.mealCals}>{pattern.meals.evening?.calories} cal</Text>
         </View>
       </View>
 

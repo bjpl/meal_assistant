@@ -128,10 +128,10 @@ const PatternCard: React.FC<PatternCardProps> = ({
         onPress={onSelect}
         variant={isSelected ? 'primary' : 'outline'}
         fullWidth
-        style={[
+        style={StyleSheet.flatten([
           styles.selectButton,
           isSelected && { backgroundColor: patternColor },
-        ]}
+        ])}
       />
     </TouchableOpacity>
   );

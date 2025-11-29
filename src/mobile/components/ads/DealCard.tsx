@@ -260,7 +260,7 @@ export const DealCard: React.FC<DealCardProps> = ({
                   title="Reject"
                   onPress={onReject}
                   variant="outline"
-                  style={[styles.actionButton, styles.rejectButton]}
+                  style={StyleSheet.flatten([styles.actionButton, styles.rejectButton])}
                 />
                 <Button
                   title="Confirm"

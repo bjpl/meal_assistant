@@ -89,7 +89,7 @@ export const fetchWeightTrend = createAsyncThunk(
 
 export const fetchAdherenceStats = createAsyncThunk(
   'analytics/fetchAdherenceStats',
-  async (options?: { startDate?: string; endDate?: string }, { rejectWithValue }) => {
+  async (options: { startDate?: string; endDate?: string } | undefined, { rejectWithValue }) => {
     const response = await analyticsApi.getAdherenceStats(options);
     if (response.error) {
       return rejectWithValue(response.message || response.error);
@@ -100,7 +100,7 @@ export const fetchAdherenceStats = createAsyncThunk(
 
 export const fetchNutritionSummary = createAsyncThunk(
   'analytics/fetchNutritionSummary',
-  async (date?: string, { rejectWithValue }) => {
+  async (date: string | undefined, { rejectWithValue }) => {
     const response = await analyticsApi.getNutritionSummary(date);
     if (response.error) {
       return rejectWithValue(response.message || response.error);

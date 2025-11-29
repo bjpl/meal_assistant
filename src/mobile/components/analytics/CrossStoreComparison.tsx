@@ -3,6 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
+  DimensionValue,
 } from 'react-native';
 import { Card } from '../base/Card';
 import { Badge } from '../base/Badge';
@@ -37,10 +38,10 @@ export const CrossStoreComparison: React.FC<CrossStoreComparisonProps> = ({
     return `${sign}${savings.toFixed(0)}%`;
   };
 
-  const getBarWidth = (price: number) => {
+  const getBarWidth = (price: number): DimensionValue => {
     // Normalize to 40-100% range for visual clarity
     const normalized = 40 + ((price - minPrice) / priceRange) * 60;
-    return `${normalized}%`;
+    return `${normalized}%` as DimensionValue;
   };
 
   return (

@@ -153,7 +153,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
                   styles.alternativeChip,
                   { borderColor: PATTERN_COLORS[pattern] },
                 ]}
-                onPress={onViewAlternatives}
+                onPress={() => onViewAlternatives?.()}
               >
                 <View
                   style={[
@@ -180,14 +180,14 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
             title="Choose Different"
             variant="secondary"
             size="small"
-            onPress={onOverride}
+            onPress={() => onOverride?.()}
           />
           {alternativePatterns.length > 0 && (
             <Button
               title="View Alternatives"
               variant="ghost"
               size="small"
-              onPress={onViewAlternatives}
+              onPress={() => onViewAlternatives?.()}
             />
           )}
         </View>

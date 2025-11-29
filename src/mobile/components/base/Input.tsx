@@ -5,6 +5,7 @@ import {
   Text,
   StyleSheet,
   ViewStyle,
+  TextStyle,
   TextInputProps,
 } from 'react-native';
 import { colors, spacing, borderRadius, typography } from '../../utils/theme';
@@ -16,7 +17,7 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   containerStyle?: ViewStyle;
-  inputStyle?: ViewStyle;
+  inputStyle?: TextStyle;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -69,7 +70,7 @@ export const Input: React.FC<InputProps> = ({
         {rightIcon && <View style={styles.iconRight}>{rightIcon}</View>}
       </View>
       {(error || helper) && (
-        <Text style={[styles.helperText, error && styles.errorText]}>
+        <Text style={[styles.helperText, error ? styles.errorText : null]}>
           {error || helper}
         </Text>
       )}
@@ -83,7 +84,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.body2,
-    fontWeight: '500',
+    fontWeight: '500' as TextStyle['fontWeight'],
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
@@ -99,7 +100,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    ...typography.body1,
+    ...typography.body1 as TextStyle,
     color: colors.text.primary,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,

@@ -135,11 +135,11 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
     return (
       <Card
         variant="filled"
-        style={[
+        style={StyleSheet.flatten([
           styles.compactCard,
           isWarning && styles.warningCard,
           isComplete && styles.completeCard,
-        ]}
+        ])}
       >
         <View style={styles.compactRow}>
           <View style={styles.compactInfo}>
@@ -177,11 +177,11 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
     <Animated.View style={[styles.container, { transform: [{ scale: pulseAnim }] }]}>
       <Card
         variant="elevated"
-        style={[
+        style={StyleSheet.flatten([
           styles.card,
           isWarning && styles.warningCard,
           isComplete && styles.completeCard,
-        ]}
+        ])}
       >
         {/* Task Name */}
         {taskName && (
@@ -277,7 +277,7 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({
               <View style={styles.completeControls}>
                 <Button
                   title="Done"
-                  onPress={onComplete}
+                  onPress={onComplete || (() => {})}
                   style={styles.controlButton}
                 />
                 <Button

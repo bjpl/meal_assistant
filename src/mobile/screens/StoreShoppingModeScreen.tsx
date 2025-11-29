@@ -117,11 +117,9 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
       </Text>
     </View>
     <ProgressBar
-      progress={completedCount}
-      max={itemCount}
+      progress={itemCount > 0 ? (completedCount / itemCount) * 100 : 0}
       color={colors.primary.main}
       height={4}
-      showLabel={false}
     />
   </View>
 );
@@ -197,11 +195,11 @@ const ShoppingItemRow: React.FC<ShoppingItemRowProps> = ({
             selectTextOnFocus
           />
         ) : (
-          <Text style={[
+          <Text style={StyleSheet.flatten([
             styles.priceText,
-            item.actualPrice && styles.priceActual,
-            item.unavailable && styles.priceUnavailable,
-          ]}>
+            item.actualPrice ? styles.priceActual : null,
+            item.unavailable ? styles.priceUnavailable : null,
+          ])}>
             {formatCurrency(item.actualPrice || item.estimatedPrice)}
           </Text>
         )}
@@ -441,12 +439,10 @@ export const StoreShoppingModeScreen: React.FC<StoreShoppingModeScreenProps> = (
             </Text>
           </View>
           <ProgressBar
-            progress={progress.completed}
-            max={progress.total}
+            progress={progress.total > 0 ? (progress.completed / progress.total) * 100 : 0}
             color={colors.primary.contrast}
             backgroundColor={colors.primary.dark}
             height={8}
-            showLabel={false}
           />
         </View>
       </View>

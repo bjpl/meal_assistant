@@ -138,10 +138,8 @@ const ScoreBreakdown: React.FC<ScoreBreakdownProps> = ({
     </View>
     <ProgressBar
       progress={score}
-      max={100}
       color={color}
       height={8}
-      showLabel={false}
     />
     <View style={styles.breakdownFooter}>
       <Text style={styles.breakdownDetail}>{detail}</Text>

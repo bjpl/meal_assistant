@@ -159,7 +159,6 @@ export const PatternEffectiveness: React.FC<PatternEffectivenessProps> = ({
                   <StarRating
                     rating={Math.round(stat.averageSatisfaction)}
                     size={14}
-                    disabled
                   />
                 </View>
 

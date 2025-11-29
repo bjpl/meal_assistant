@@ -150,7 +150,7 @@ export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ navigation, rout
     <Card
       onPress={() => toggleItem(item.id)}
       variant={item.checked ? 'filled' : 'outlined'}
-      style={[styles.itemCard, item.checked && styles.itemCardChecked]}
+      style={StyleSheet.flatten([styles.itemCard, item.checked && styles.itemCardChecked])}
     >
       <View style={styles.itemRow}>
         <View style={[styles.checkbox, item.checked && styles.checkboxChecked]}>
@@ -306,10 +306,10 @@ export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ navigation, rout
                   activeStore === store.storeId ? null : store.storeId
                 )}
                 variant={activeStore === store.storeId ? 'elevated' : 'outlined'}
-                style={[
+                style={StyleSheet.flatten([
                   styles.storeCard,
                   isComplete && styles.storeCardComplete,
-                ]}
+                ])}
               >
                 <Text style={styles.storeName}>{store.storeName}</Text>
                 <Text style={styles.storeCount}>

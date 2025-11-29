@@ -252,7 +252,7 @@ export const TemplateManagerScreen: React.FC<TemplateManagerScreenProps> = ({
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="Search templates..."
-          style={styles.searchInput}
+          containerStyle={styles.searchInput}
         />
       </View>
 
@@ -441,7 +441,7 @@ export const TemplateManagerScreen: React.FC<TemplateManagerScreenProps> = ({
               <Button
                 title="Delete"
                 onPress={handleDeleteTemplate}
-                style={[styles.confirmAction, styles.deleteConfirmButton]}
+                style={StyleSheet.flatten([styles.confirmAction, styles.deleteConfirmButton])}
               />
             </View>
           </Card>

@@ -135,16 +135,26 @@ const MOCK_STORES: Store[] = [
 ];
 
 const createMockItems = (): OptimizedItem[] => {
-  const items: OptimizedItem[] = [
-    { id: 'item-1', name: 'Chicken Breast', category: 'meat', quantity: 2, unit: 'lb', price: 0, bestScore: 0 },
-    { id: 'item-2', name: 'Broccoli', category: 'produce', quantity: 1, unit: 'bunch', price: 0, bestScore: 0 },
-    { id: 'item-3', name: 'Greek Yogurt', category: 'dairy', quantity: 2, unit: 'container', price: 0, bestScore: 0 },
-    { id: 'item-4', name: 'Brown Rice', category: 'pantry', quantity: 1, unit: 'bag', price: 0, bestScore: 0 },
-    { id: 'item-5', name: 'Olive Oil', category: 'pantry', quantity: 1, unit: 'bottle', price: 0, bestScore: 0 },
-    { id: 'item-6', name: 'Eggs', category: 'dairy', quantity: 1, unit: 'dozen', price: 0, bestScore: 0 },
-    { id: 'item-7', name: 'Bananas', category: 'produce', quantity: 1, unit: 'bunch', price: 0, bestScore: 0 },
-    { id: 'item-8', name: 'Salmon', category: 'meat', quantity: 1, unit: 'lb', price: 0, bestScore: 0 },
+  const baseItems = [
+    { id: 'item-1', name: 'Chicken Breast', category: 'meat', quantity: 2, unit: 'lb' },
+    { id: 'item-2', name: 'Broccoli', category: 'produce', quantity: 1, unit: 'bunch' },
+    { id: 'item-3', name: 'Greek Yogurt', category: 'dairy', quantity: 2, unit: 'container' },
+    { id: 'item-4', name: 'Brown Rice', category: 'pantry', quantity: 1, unit: 'bag' },
+    { id: 'item-5', name: 'Olive Oil', category: 'pantry', quantity: 1, unit: 'bottle' },
+    { id: 'item-6', name: 'Eggs', category: 'dairy', quantity: 1, unit: 'dozen' },
+    { id: 'item-7', name: 'Bananas', category: 'produce', quantity: 1, unit: 'bunch' },
+    { id: 'item-8', name: 'Salmon', category: 'meat', quantity: 1, unit: 'lb' },
   ];
+
+  const items: OptimizedItem[] = baseItems.map(item => ({
+    ...item,
+    price: 0,
+    bestScore: 0,
+    assignedStoreId: '',
+    assignedStoreName: '',
+    storeScores: {},
+    manuallyAssigned: false,
+  }));
 
   // Generate scores for each item at each store
   return items.map(item => {
@@ -500,7 +510,7 @@ export const StoreOptimizerScreen: React.FC = () => {
             <Text style={styles.summaryValue}>${totals.totalSpend.toFixed(0)}</Text>
             <Text style={styles.summaryLabel}>Est. Total</Text>
           </Card>
-          <Card variant="filled" padding="small" style={[styles.summaryCard, styles.savingsCard]}>
+          <Card variant="filled" padding="small" style={StyleSheet.flatten([styles.summaryCard, styles.savingsCard])}>
             <Text style={[styles.summaryValue, styles.savingsValue]}>
               ${totals.totalSavings.toFixed(0)}
             </Text>

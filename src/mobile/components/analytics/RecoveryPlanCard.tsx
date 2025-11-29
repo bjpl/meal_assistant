@@ -184,13 +184,13 @@ export const RecoveryPlanCard: React.FC<RecoveryPlanCardProps> = ({
       <View style={styles.actions}>
         <Button
           title="Accept Recovery Plan"
-          onPress={onAcceptPlan}
+          onPress={() => onAcceptPlan?.()}
           style={styles.actionButton}
         />
         <Button
           title="Customize Plan"
           variant="secondary"
-          onPress={onCustomize}
+          onPress={() => onCustomize?.()}
           style={styles.actionButton}
         />
       </View>

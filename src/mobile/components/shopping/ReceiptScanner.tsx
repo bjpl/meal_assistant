@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { Camera, CameraView } from 'expo-camera';
+import { Camera, CameraType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Card } from '../base/Card';
 import { Button } from '../base/Button';
@@ -218,9 +218,9 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
         {/* Capture Step */}
         {step === 'capture' && (
           <View style={styles.captureContainer}>
-            <CameraView
+            <Camera
               style={styles.camera}
-              facing="back"
+              type={CameraType.back}
             >
               <View style={styles.cameraOverlay}>
                 <View style={styles.scanFrame}>
@@ -233,7 +233,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
                   Position receipt within the frame
                 </Text>
               </View>
-            </CameraView>
+            </Camera>
 
             <View style={styles.captureActions}>
               <Button
@@ -302,7 +302,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
               <Card
                 key={index}
                 variant="outlined"
-                style={[styles.itemCard, item.matched && styles.itemMatched]}
+                style={StyleSheet.flatten([styles.itemCard, item.matched && styles.itemMatched])}
               >
                 {editingItem === index ? (
                   <View style={styles.editForm}>

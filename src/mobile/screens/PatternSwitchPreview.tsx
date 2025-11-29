@@ -131,7 +131,7 @@ export const PatternSwitchPreview: React.FC<PatternSwitchPreviewProps> = ({
       </View>
 
       {/* New Pattern */}
-      <Card variant="elevated" style={[styles.patternCard, styles.newPatternCard]}>
+      <Card variant="elevated" style={StyleSheet.flatten([styles.patternCard, styles.newPatternCard])}>
         <View style={styles.patternHeader}>
           <Text style={styles.patternLabel}>To</Text>
           <Badge

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ViewStyle } from 'react-native';
 import { Card } from '../base/Card';
 import { Badge } from '../base/Badge';
 import { ProgressBar } from '../base/ProgressBar';
@@ -128,7 +128,7 @@ export const PrepTimeline: React.FC<PrepTimelineProps> = ({
                   styles.taskCard,
                   isActive && styles.taskCardActive,
                   task.status === 'completed' && styles.taskCardComplete,
-                ]}
+                ] as ViewStyle}
               >
                 <View style={styles.taskHeader}>
                   <Text

@@ -8,7 +8,7 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
-import { Camera, CameraType, CameraView } from 'expo-camera';
+import { Camera, CameraType,  } from 'expo-camera';
 import { Button } from '../base/Button';
 import { Card } from '../base/Card';
 import { colors, spacing, typography, borderRadius } from '../../utils/theme';
@@ -122,12 +122,21 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
             <Text style={styles.noPermissionText}>
               Please enable camera access in your device settings to scan barcodes.
             </Text>
-            <Button
-              title="Enter Manually"
-              onPress={onManualEntry}
-              variant="outline"
-              style={styles.manualButton}
-            />
+            {onManualEntry && (
+
+              <Button
+
+                title="Enter Manually"
+
+                onPress={onManualEntry}
+
+                variant="outline"
+
+                style={styles.manualButton}
+
+              />
+
+            )}
             <Button title="Close" onPress={onClose} variant="ghost" />
           </View>
         </View>
@@ -138,12 +147,12 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
   return (
     <Modal visible={visible} animationType="slide">
       <View style={styles.container}>
-        <CameraView
+        <Camera
           style={StyleSheet.absoluteFill}
-          facing="back"
-          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-          barcodeScannerSettings={{
-            barcodeTypes: [
+          type={CameraType.back}
+          onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+          barCodeScannerSettings={{
+            barCodeTypes: [
               'upc_a',
               'upc_e',
               'ean13',
@@ -203,12 +212,14 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
                 <Text style={styles.hint}>
                   Works with UPC, EAN, Code 128, and more
                 </Text>
-                <Button
-                  title="Enter Manually"
-                  onPress={onManualEntry}
-                  variant="outline"
-                  style={styles.actionButton}
-                />
+                {onManualEntry && (
+                  <Button
+                    title="Enter Manually"
+                    onPress={onManualEntry}
+                    variant="outline"
+                    style={styles.actionButton}
+                  />
+                )}
               </>
             ) : (
               <Card variant="elevated" style={styles.resultCard}>
@@ -246,11 +257,13 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
                         variant="outline"
                         style={styles.resultButton}
                       />
-                      <Button
-                        title="Add Manually"
-                        onPress={onManualEntry}
-                        style={styles.resultButton}
-                      />
+                      {onManualEntry && (
+                        <Button
+                          title="Add Manually"
+                          onPress={onManualEntry}
+                          style={styles.resultButton}
+                        />
+                      )}
                     </View>
                   </>
                 )}

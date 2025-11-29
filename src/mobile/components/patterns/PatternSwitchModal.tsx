@@ -134,10 +134,10 @@ export const PatternSwitchModal: React.FC<PatternSwitchModalProps> = ({
                   {meal.charAt(0).toUpperCase() + meal.slice(1)}
                 </Text>
                 <Text style={styles.mealTimeValue}>
-                  {pattern.meals[meal].time}
+                  {pattern.meals[meal]?.time}
                 </Text>
                 <Text style={styles.mealCalValue}>
-                  {pattern.meals[meal].calories} cal
+                  {pattern.meals[meal]?.calories} cal
                 </Text>
               </View>
             ))}

@@ -52,10 +52,10 @@ const StoreCard: React.FC<StoreCardProps> = ({ store, onToggle, onRatingChange }
   return (
     <Card
       variant={store.isPreferred ? 'elevated' : 'outlined'}
-      style={[
+      style={StyleSheet.flatten([
         styles.storeCard,
         store.isPreferred && styles.storeCardSelected,
-      ]}
+      ])}
     >
       <TouchableOpacity
         style={styles.storeCardContent}

@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  ViewStyle,
 } from 'react-native';
 import { Card } from '../base/Card';
 import { Badge } from '../base/Badge';
@@ -57,11 +58,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       <TouchableOpacity onPress={onPress} disabled={!onPress}>
         <Card
           variant={isCurrentTask ? 'elevated' : 'outlined'}
-          style={[
+          style={StyleSheet.flatten([
             styles.compactCard,
             task.status === 'completed' && styles.completedCard,
             isCurrentTask && styles.currentCard,
-          ]}
+          ])}
         >
           <View style={styles.compactRow}>
             {/* Status Icon */}
@@ -122,11 +123,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       onPress={onPress}
       variant={isCurrentTask ? 'elevated' : 'outlined'}
       accentColor={isCurrentTask ? colors.warning : undefined}
-      style={[
+      style={StyleSheet.flatten([
         styles.detailedCard,
         task.status === 'completed' && styles.completedCard,
         isCurrentTask && styles.currentCard,
-      ]}
+      ])}
     >
       {/* Header */}
       <View style={styles.header}>

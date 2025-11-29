@@ -138,10 +138,10 @@ export const SubstitutionModal: React.FC<SubstitutionModalProps> = ({
                       key={index}
                       onPress={() => setSelectedSubstitute(substitute)}
                       variant={selectedSubstitute?.id === substitute.id ? 'elevated' : 'outlined'}
-                      style={[
+                      style={StyleSheet.flatten([
                         styles.suggestedCard,
                         selectedSubstitute?.id === substitute.id && styles.selectedCard,
-                      ]}
+                      ])}
                     >
                       <Text style={styles.suggestedName}>{substitute.name}</Text>
                       <Text style={styles.suggestedCalories}>
@@ -167,7 +167,7 @@ export const SubstitutionModal: React.FC<SubstitutionModalProps> = ({
                   key={substitute.id}
                   onPress={() => setSelectedSubstitute(substitute)}
                   variant={isSelected ? 'elevated' : 'outlined'}
-                  style={[styles.substituteCard, isSelected && styles.selectedCard]}
+                  style={StyleSheet.flatten([styles.substituteCard, isSelected && styles.selectedCard])}
                 >
                   <View style={styles.substituteRow}>
                     <View style={styles.substituteInfo}>

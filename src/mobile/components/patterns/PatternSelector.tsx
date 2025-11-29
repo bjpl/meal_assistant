@@ -43,10 +43,10 @@ export const PatternSelector: React.FC<PatternSelectorProps> = ({
         }}
         variant={isSelected ? 'elevated' : 'outlined'}
         accentColor={colors.patterns[pattern.id]}
-        style={[
+        style={StyleSheet.flatten([
           isCompact ? styles.compactCard : styles.fullCard,
           isSelected && styles.selectedCard,
-        ]}
+        ])}
       >
         <View style={styles.patternHeader}>
           <View
@@ -81,10 +81,10 @@ export const PatternSelector: React.FC<PatternSelectorProps> = ({
               {(['morning', 'noon', 'evening'] as const).map((meal) => (
                 <View key={meal} style={styles.mealPreviewItem}>
                   <Text style={styles.mealPreviewTime}>
-                    {pattern.meals[meal].time}
+                    {pattern.meals[meal]?.time}
                   </Text>
                   <Text style={styles.mealPreviewCalories}>
-                    {pattern.meals[meal].calories} cal
+                    {pattern.meals[meal]?.calories} cal
                   </Text>
                 </View>
               ))}
@@ -138,7 +138,7 @@ export const PatternSelector: React.FC<PatternSelectorProps> = ({
               <Text style={styles.modalTitle}>Select Pattern</Text>
               <Button
                 title="Close"
-                onPress={onClose}
+                onPress={onClose || (() => {})}
                 variant="ghost"
                 size="small"
               />

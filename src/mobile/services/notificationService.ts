@@ -8,12 +8,16 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Check if expo-notifications is available
+// @ts-expect-error - expo-notifications may not be installed
 let Notifications: typeof import('expo-notifications') | null = null;
+// @ts-expect-error - expo-device may not be installed
 let Device: typeof import('expo-device') | null = null;
 
 try {
   // Dynamic import to handle cases where expo-notifications is not installed
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Notifications = require('expo-notifications');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Device = require('expo-device');
 } catch {
   console.warn('expo-notifications not available. Push notifications disabled.');

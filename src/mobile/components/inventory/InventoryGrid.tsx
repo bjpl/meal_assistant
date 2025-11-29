@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  ViewStyle,
   View,
   Text,
   StyleSheet,
@@ -67,14 +68,13 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
     return (
       <Card
         onPress={() => onItemPress(item)}
-        onLongPress={() => onItemLongPress && onItemLongPress(item)}
         variant={isSelected ? 'elevated' : 'outlined'}
         style={[
           styles.card,
-          { width: cardWidth },
+          { width: cardWidth } as ViewStyle,
           isSelected && styles.selectedCard,
           expiryStatus === 'expired' && styles.expiredCard,
-        ]}
+        ] as ViewStyle}
       >
         {/* Selection Indicator */}
         {isSelected && (
@@ -111,7 +111,7 @@ export const InventoryGrid: React.FC<InventoryGridProps> = ({
           <View style={styles.expiryRow}>
             <ExpiryIndicator
               expiryDate={item.expiryDate}
-              variant="compact"
+              variant="dot"
             />
           </View>
         )}

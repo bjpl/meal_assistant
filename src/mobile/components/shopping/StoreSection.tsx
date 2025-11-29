@@ -52,7 +52,7 @@ export const StoreSection: React.FC<StoreSectionProps> = ({
       onPress={onStorePress}
       variant={isActive ? 'elevated' : 'outlined'}
       accentColor={isComplete ? colors.success : isActive ? colors.primary.main : undefined}
-      style={[styles.container, isComplete && styles.completeContainer]}
+      style={StyleSheet.flatten([styles.container, isComplete && styles.completeContainer])}
     >
       {/* Header */}
       <View style={styles.header}>
@@ -120,7 +120,7 @@ export const StoreSection: React.FC<StoreSectionProps> = ({
               <Card
                 onPress={() => onItemToggle(item.id)}
                 variant="filled"
-                style={[styles.itemCard, item.checked && styles.itemChecked]}
+                style={StyleSheet.flatten([styles.itemCard, item.checked && styles.itemChecked])}
               >
                 <View style={styles.itemRow}>
                   <View style={[styles.checkbox, item.checked && styles.checkboxChecked]}>

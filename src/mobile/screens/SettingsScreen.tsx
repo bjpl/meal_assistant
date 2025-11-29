@@ -22,9 +22,7 @@ import { colors, spacing, typography, borderRadius } from '../utils/theme';
 import { RootState, AppDispatch } from '../store';
 import {
   updateProfile,
-  logout,
-  selectUser,
-  selectIsAuthenticated,
+  logoutUser,
 } from '../store/slices/userSlice';
 import {
   areNotificationsEnabled,
@@ -43,12 +41,14 @@ type UnitOption = 'imperial' | 'metric';
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const user = useSelector(selectUser);
-  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const userState = useSelector((state: RootState) => state.user);
+  const profile = userState.profile;
+  const preferences = userState.preferences;
+  const isAuthenticated = userState.isAuthenticated;
 
   // Profile state
-  const [fullName, setFullName] = useState(user?.fullName || '');
-  const [email, setEmail] = useState(user?.email || '');
+  const [fullName, setFullName] = useState(profile?.name || '');
+  const [email, setEmail] = useState(profile?.email || '');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   // Preferences state
@@ -76,9 +76,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
       setMealReminders(schedule.mealReminders);
 
       // Load user preferences
-      if (user?.preferences) {
-        setTheme(user.preferences.theme || 'system');
-        setUnits(user.preferences.units || 'imperial');
+      if (preferences) {
+        setTheme(preferences.theme || 'system');
+        setUnits(preferences.units || 'imperial');
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -99,12 +99,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
 
     setIsSaving(true);
     try {
-      await dispatch(
+      dispatch(
         updateProfile({
-          fullName: fullName.trim(),
+          name: fullName.trim(),
           email: email.trim(),
         })
-      ).unwrap();
+      );
       setIsEditingProfile(false);
       Alert.alert('Success', 'Profile updated successfully');
     } catch (error) {
@@ -142,7 +142,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
         text: 'Logout',
         style: 'destructive',
         onPress: async () => {
-          await dispatch(logout());
+          await dispatch(logoutUser(false));
           navigation?.reset({
             index: 0,
             routes: [{ name: 'Onboarding' }],
@@ -222,8 +222,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
                 size="small"
                 onPress={() => {
                   setIsEditingProfile(false);
-                  setFullName(user?.fullName || '');
-                  setEmail(user?.email || '');
+                  setFullName(profile?.name || '');
+                  setEmail(profile?.email || '');
                 }}
               />
               <Button
@@ -238,19 +238,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           <View style={styles.profileInfo}>
             <View style={styles.profileRow}>
               <Text style={styles.profileLabel}>Name</Text>
-              <Text style={styles.profileValue}>{user?.fullName || 'Not set'}</Text>
+              <Text style={styles.profileValue}>{profile?.name || 'Not set'}</Text>
             </View>
             <View style={styles.profileRow}>
               <Text style={styles.profileLabel}>Email</Text>
-              <Text style={styles.profileValue}>{user?.email || 'Not set'}</Text>
+              <Text style={styles.profileValue}>{profile?.email || 'Not set'}</Text>
             </View>
             <View style={styles.profileRow}>
               <Text style={styles.profileLabel}>Member since</Text>
-              <Text style={styles.profileValue}>
-                {user?.createdAt
-                  ? new Date(user.createdAt).toLocaleDateString()
-                  : 'N/A'}
-              </Text>
+              <Text style={styles.profileValue}>N/A</Text>
             </View>
           </View>
         )}
@@ -270,7 +266,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           <Switch
             value={notificationsOn}
             onValueChange={handleToggleNotifications}
-            trackColor={{ false: colors.border, true: colors.primary.main }}
+            trackColor={{ false: colors.border.light, true: colors.primary.main }}
           />
         </View>
 
@@ -307,7 +303,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
                   onValueChange={(enabled) =>
                     handleToggleReminder(reminder.id, enabled)
                   }
-                  trackColor={{ false: colors.border, true: colors.primary.main }}
+                  trackColor={{ false: colors.border.light, true: colors.primary.main }}
                 />
               </View>
             ))}
@@ -420,7 +416,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
           title="Delete Account"
           variant="ghost"
           onPress={handleDeleteAccount}
-          style={[styles.accountButton, styles.deleteButton]}
+          style={StyleSheet.flatten([styles.accountButton, styles.deleteButton])}
         />
       </Card>
 
@@ -504,7 +500,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.border.light,
   },
   settingInfo: {
     flex: 1,
@@ -558,7 +554,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border.light,
   },
   themeOptionSelected: {
     backgroundColor: colors.primary.main,
@@ -581,7 +577,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border.light,
   },
   unitOptionSelected: {
     backgroundColor: colors.primary.main,
@@ -601,7 +597,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.border.light,
   },
   linkText: {
     ...typography.body1,

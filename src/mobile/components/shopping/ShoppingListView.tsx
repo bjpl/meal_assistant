@@ -83,7 +83,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
       onPress={() => onToggleItem(item.id)}
       onLongPress={() => onItemPress && onItemPress(item)}
       variant={item.checked ? 'filled' : 'outlined'}
-      style={[styles.itemCard, item.checked && styles.itemCardChecked]}
+      style={StyleSheet.flatten([styles.itemCard, item.checked && styles.itemCardChecked])}
     >
       <View style={styles.itemRow}>
         <View style={[styles.checkbox, item.checked && styles.checkboxChecked]}>

@@ -286,8 +286,8 @@ export const QuickAddModal: React.FC<QuickAddModalProps> = ({
                 <Slider
                   value={daysUntilExpiry}
                   onValueChange={setDaysUntilExpiry}
-                  minimumValue={1}
-                  maximumValue={30}
+                  min={1}
+                  max={30}
                   step={1}
                   label={`Expires in ${daysUntilExpiry} day${daysUntilExpiry !== 1 ? 's' : ''}`}
                   leftLabel="1 day"

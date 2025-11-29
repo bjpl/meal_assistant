@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ViewStyle } from 'react-native';
 import { Card } from '../base/Card';
 import { Badge } from '../base/Badge';
 import { colors, spacing, typography, borderRadius } from '../../utils/theme';
@@ -77,7 +77,7 @@ export const EquipmentStatus: React.FC<EquipmentStatusProps> = ({
               style={[
                 styles.equipmentCard,
                 { borderColor: statusColor, borderWidth: 2 },
-              ]}
+              ] as ViewStyle}
             >
               <Text style={styles.equipmentIcon}>{item.icon}</Text>
               <Text style={styles.equipmentName} numberOfLines={1}>
