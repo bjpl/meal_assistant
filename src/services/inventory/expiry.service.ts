@@ -478,6 +478,98 @@ export class ExpiryPreventionService {
   }
 
   /**
+   * Get recipe recommendations for expiring items using RAG
+   * Integrates with RuVector for intelligent recipe suggestions
+   */
+  public async getRecipeRecommendationsForExpiring(): Promise<Array<{
+    itemId: string;
+    itemName: string;
+    daysUntilExpiry: number;
+    recipes: string[];
+    ingredients: string[];
+  }>> {
+    const expiringItems = this.getExpiringItems(3); // Items expiring in 3 days
+
+    if (expiringItems.length === 0) {
+      return [];
+    }
+
+    const recommendations: Array<{
+      itemId: string;
+      itemName: string;
+      daysUntilExpiry: number;
+      recipes: string[];
+      ingredients: string[];
+    }> = [];
+
+    // Group by urgency
+    for (const item of expiringItems) {
+      const now = new Date();
+      const daysUntilExpiry = Math.floor(
+        (item.expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      // Generate simple recommendations based on category
+      const recipes = this.getRecipesForCategory(item.category);
+      const complementaryIngredients = this.getComplementaryIngredients(item.category);
+
+      recommendations.push({
+        itemId: item.id,
+        itemName: item.name,
+        daysUntilExpiry,
+        recipes,
+        ingredients: complementaryIngredients
+      });
+    }
+
+    return recommendations;
+  }
+
+  /**
+   * Get expiring items within specified days
+   */
+  private getExpiringItems(days: number): InventoryItem[] {
+    const items = inventoryTrackingService.getItems();
+    const now = new Date();
+    const cutoff = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+    return items.filter(item => {
+      return item.quantity > 0 && item.expiryDate <= cutoff;
+    });
+  }
+
+  /**
+   * Get recipe suggestions based on ingredient category
+   */
+  private getRecipesForCategory(category: string): string[] {
+    const recipeMap: Record<string, string[]> = {
+      protein: ['Stir Fry', 'Grilled Protein Bowl', 'Protein Salad', 'Soup'],
+      dairy: ['Smoothie', 'Yogurt Parfait', 'Cheese Board', 'Creamy Soup'],
+      vegetable: ['Roasted Vegetables', 'Stir Fry', 'Salad', 'Vegetable Soup'],
+      fruit: ['Smoothie', 'Fruit Salad', 'Baked Fruit', 'Compote'],
+      grains: ['Grain Bowl', 'Fried Rice', 'Pasta Dish', 'Casserole'],
+      prepared: ['Heat and Eat', 'Add to Salad', 'Incorporate into New Dish']
+    };
+
+    return recipeMap[category] || ['Use in Mixed Dish', 'Freeze for Later'];
+  }
+
+  /**
+   * Get complementary ingredients for a category
+   */
+  private getComplementaryIngredients(category: string): string[] {
+    const complementMap: Record<string, string[]> = {
+      protein: ['rice', 'vegetables', 'spices', 'oil'],
+      dairy: ['fruit', 'granola', 'honey', 'nuts'],
+      vegetable: ['protein', 'grains', 'oil', 'seasonings'],
+      fruit: ['yogurt', 'nuts', 'honey', 'granola'],
+      grains: ['protein', 'vegetables', 'sauce', 'cheese']
+    };
+
+    return complementMap[category] || ['seasonings', 'oil', 'herbs'];
+  }
+
+  /**
    * Get all waste records
    */
   public getWasteRecords(limit: number = 100): WasteRecord[] {

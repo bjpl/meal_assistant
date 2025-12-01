@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { MealLog, DailyStats, WeightEntry } from '../../types';
 import { mealsApi } from '../../services/apiService';
+import { vectorSearchService, NLMealLogRequest, NLMealLogResponse } from '../../services/vectorSearchService';
 
 interface MealsState {
   mealLogs: MealLog[];
@@ -77,6 +78,97 @@ export const fetchMealHistory = createAsyncThunk(
       return rejectWithValue(response.message || response.error);
     }
     return response.data;
+  }
+);
+
+/**
+ * Log a meal using natural language description
+ * Uses semantic vector search to parse and understand the meal
+ */
+export const logMealNaturalLanguage = createAsyncThunk(
+  'meals/logMealNaturalLanguage',
+  async (request: NLMealLogRequest, { rejectWithValue }) => {
+    try {
+      // Try server-side NL processing first
+      const response = await vectorSearchService.logMealNL(request);
+      return response;
+    } catch (error) {
+      // Fallback to local parsing if server unavailable
+      console.warn('[NL Logging] Server unavailable, using local parsing');
+      const localParsed = vectorSearchService.parseNLMealLocal(request.description);
+
+      // Create a meal log from the local parsing
+      const mealLog: Partial<MealLog> = {
+        id: `local_${Date.now()}`,
+        description: request.description,
+        mealType: (localParsed.mealType || request.mealType || 'snack') as MealLog['mealType'],
+        timestamp: request.timestamp || new Date(),
+        photoUri: request.photoUri,
+        foods: localParsed.foods?.map(f => ({
+          name: f.name,
+          quantity: f.quantity || 1,
+          unit: 'serving',
+          calories: f.calories || 0,
+          protein: f.protein || 0,
+          carbs: f.carbs || 0,
+          fat: f.fat || 0
+        })) || []
+      };
+
+      // Also try to log via regular API
+      try {
+        const apiResponse = await mealsApi.logMeal(mealLog as Omit<MealLog, 'id'>);
+        if (!apiResponse.error && apiResponse.data) {
+          return {
+            mealLog: apiResponse.data as NLMealLogResponse['mealLog'],
+            confidence: 0.7,
+            suggestions: []
+          };
+        }
+      } catch {
+        // Ignore API error, return local result
+      }
+
+      return {
+        mealLog: mealLog as NLMealLogResponse['mealLog'],
+        confidence: 0.5, // Lower confidence for local parsing
+        suggestions: ['Consider adding more details for better tracking']
+      } as NLMealLogResponse;
+    }
+  }
+);
+
+/**
+ * Search for meals using semantic search
+ */
+export const searchMealsSemantic = createAsyncThunk(
+  'meals/searchSemantic',
+  async (query: string, { rejectWithValue }) => {
+    try {
+      const results = await vectorSearchService.searchMeals({ query, limit: 10 });
+      return results;
+    } catch (error) {
+      return rejectWithValue('Semantic search failed');
+    }
+  }
+);
+
+/**
+ * Get recipe recommendations based on available ingredients
+ */
+export const getRecommendations = createAsyncThunk(
+  'meals/getRecommendations',
+  async (context: {
+    availableIngredients?: string[];
+    dietaryRestrictions?: string[];
+    timeConstraint?: number;
+  }, { rejectWithValue }) => {
+    try {
+      const recommendations = await vectorSearchService.getRecommendations(context);
+      return recommendations;
+    } catch (error) {
+      return rejectWithValue('Failed to get recommendations');
+    }
   }
 );
 
@@ -207,6 +299,25 @@ const mealsSlice = createSlice({
       .addCase(fetchMealHistory.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+      // logMealNaturalLanguage
+      .addCase(logMealNaturalLanguage.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(logMealNaturalLanguage.fulfilled, (state, action) => {
+        state.loading = false;
+        if (action.payload?.mealLog) {
+          const mealLog = action.payload.mealLog as unknown as MealLog;
+          state.mealLogs.push(mealLog);
+          if (mealLog.photoUri) {
+            state.pendingUploads.push(mealLog.id);
+          }
+        }
+      })
+      .addCase(logMealNaturalLanguage.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string || 'NL meal logging failed';
       });
   },
 });
