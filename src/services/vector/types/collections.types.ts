@@ -9,10 +9,14 @@ import { VectorDocument } from './vector.types';
  * Base collection metadata
  */
 export interface CollectionMetadata {
+  name?: string;
   collectionName: string;
   createdAt: Date;
   updatedAt: Date;
   documentCount: number;
+  dimensions?: number;
+  metric?: string;
+  indexType?: string;
   schema?: CollectionSchema;
 }
 

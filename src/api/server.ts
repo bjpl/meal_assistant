@@ -14,17 +14,18 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 
 // Route imports
-const patternRoutes = require('./routes/patterns');
-const mealRoutes = require('./routes/meals');
-const inventoryRoutes = require('./routes/inventory');
-const prepRoutes = require('./routes/prep');
-const shoppingRoutes = require('./routes/shopping');
-const analyticsRoutes = require('./routes/analytics');
-const authRoutes = require('./routes/auth');
-const hydrationRoutes = require('./routes/hydration');
-const adRoutes = require('./routes/ads');
-const templateRoutes = require('./routes/templates');
-const priceRoutes = require('./routes/prices');
+const patternRoutes = require('./routes/patterns').default;
+const mealRoutes = require('./routes/meals').default;
+const authRoutes = require('./routes/auth').default;
+const vectorRoutes = require('./routes/vector.routes').default;
+// const inventoryRoutes = require('./routes/inventory');
+// const prepRoutes = require('./routes/prep');
+// const shoppingRoutes = require('./routes/shopping');
+// const analyticsRoutes = require('./routes/analytics');
+// const hydrationRoutes = require('./routes/hydration');
+// const adRoutes = require('./routes/ads');
+// const templateRoutes = require('./routes/templates');
+// const priceRoutes = require('./routes/prices');
 
 // Middleware imports
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -67,15 +68,16 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/patterns', patternRoutes);
 app.use('/api/meals', mealRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/prep', prepRoutes);
-app.use('/api/shopping', shoppingRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/hydration', hydrationRoutes);
-app.use('/api/ads', adRoutes);
-app.use('/api/templates', templateRoutes);
-app.use('/api/prices', priceRoutes);
-app.use('/api/deals', priceRoutes);
+app.use('/api/vector', vectorRoutes);
+// app.use('/api/inventory', inventoryRoutes);
+// app.use('/api/prep', prepRoutes);
+// app.use('/api/shopping', shoppingRoutes);
+// app.use('/api/analytics', analyticsRoutes);
+// app.use('/api/hydration', hydrationRoutes);
+// app.use('/api/ads', adRoutes);
+// app.use('/api/templates', templateRoutes);
+// app.use('/api/prices', priceRoutes);
+// app.use('/api/deals', priceRoutes);
 
 // Error handling
 app.use(notFoundHandler);

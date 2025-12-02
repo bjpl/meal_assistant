@@ -144,17 +144,21 @@ export class RAGService {
 
       // Filter out already available ingredients
       const available = new Set(context.availableIngredients?.map(i => i.toLowerCase()) || []);
-      const filtered = results.filter(r =>
-        !available.has(r.document.name.toLowerCase())
-      );
+      const filtered = results.filter(r => {
+        const doc = r.document as any;
+        return !available.has(doc.name.toLowerCase());
+      });
 
-      return filtered.slice(0, topK).map(result => ({
-        ingredient: result.document.name,
-        score: result.score,
-        reason: `Pairs well with your available ingredients`,
-        potentialUses: [`Can be used in ${result.document.category} dishes`],
-        pairsWithAvailable: context.availableIngredients || []
-      }));
+      return filtered.slice(0, topK).map(result => {
+        const doc = result.document as any;
+        return {
+          ingredient: doc.name,
+          score: result.score,
+          reason: `Pairs well with your available ingredients`,
+          potentialUses: [`Can be used in ${doc.category} dishes`],
+          pairsWithAvailable: context.availableIngredients || []
+        };
+      });
     } catch (error) {
       throw new VectorError(
         VectorErrorType.SEARCH_FAILED,

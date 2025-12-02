@@ -4,9 +4,8 @@
  */
 
 import { graphService } from '../graph/graph.service';
-import { getAllIngredients, getIngredientById } from './ingredients.seeder';
-import { getAllPatterns, getPatternById } from './patterns.seeder';
-import { GraphNode, GraphEdge } from '../types';
+import { getAllIngredients } from './ingredients.seeder';
+import { getAllPatterns } from './patterns.seeder';
 
 /**
  * Ingredient substitution relationships with scores
@@ -91,18 +90,19 @@ export async function seedGraph(): Promise<void> {
   const ingredients = getAllIngredients();
   for (const ingredient of ingredients) {
     try {
-      await graphService.createNode('Ingredient', {
-        id: ingredient.id,
+      const nutrition = ingredient.nutritionPer100g;
+      await graphService.createNode('ingredient', {
+        id: ingredient.ingredientId,
         name: ingredient.name,
         category: ingredient.category,
-        calories: ingredient.calories,
-        protein: ingredient.protein,
-        tags: ingredient.tags
+        calories: nutrition?.calories || 0,
+        protein: nutrition?.protein || 0,
+        tags: ingredient.tags || []
       });
       console.log(`  ✓ Created node: ${ingredient.name}`);
       nodesCreated++;
     } catch (error) {
-      console.error(`  ✗ Error creating node ${ingredient.id}:`, error);
+      console.error(`  ✗ Error creating node ${ingredient.ingredientId}:`, error);
       errors++;
     }
   }
@@ -112,8 +112,8 @@ export async function seedGraph(): Promise<void> {
   const patterns = getAllPatterns();
   for (const pattern of patterns) {
     try {
-      await graphService.createNode('MealPattern', {
-        id: pattern.id,
+      await graphService.createNode('meal', {
+        id: pattern.patternId,
         name: pattern.name,
         description: pattern.description,
         totalCalories: pattern.totalCalories,
@@ -123,7 +123,7 @@ export async function seedGraph(): Promise<void> {
       console.log(`  ✓ Created node: ${pattern.name}`);
       nodesCreated++;
     } catch (error) {
-      console.error(`  ✗ Error creating pattern node ${pattern.id}:`, error);
+      console.error(`  ✗ Error creating pattern node ${pattern.patternId}:`, error);
       errors++;
     }
   }
@@ -132,7 +132,7 @@ export async function seedGraph(): Promise<void> {
   console.log('\n🔄 Creating substitution relationships...');
   for (const sub of SUBSTITUTION_RELATIONSHIPS) {
     try {
-      await graphService.createEdge(sub.from, sub.to, 'SUBSTITUTE_FOR', {
+      await graphService.createEdge(sub.from, sub.to, 'SUBSTITUTES_FOR', {
         score: sub.score,
         context: sub.context,
         nutritionalMatch: sub.nutritionalMatch,
@@ -150,7 +150,7 @@ export async function seedGraph(): Promise<void> {
   console.log('\n🍽️ Creating pattern-ingredient relationships...');
   for (const rel of PATTERN_INGREDIENT_RELATIONSHIPS) {
     try {
-      await graphService.createEdge(rel.ingredient, `pattern_${rel.pattern}`, 'FITS_PATTERN', {
+      await graphService.createEdge(rel.ingredient, `pattern_${rel.pattern}`, 'CONTAINS', {
         mealType: rel.mealType,
         portion: rel.portion,
         score: rel.score
@@ -217,18 +217,18 @@ export async function verifyGraph(): Promise<boolean> {
   try {
     const stats = await graphService.getStats();
     console.log(`\n📊 Graph Statistics:`);
-    console.log(`   Total nodes: ${stats.totalNodes}`);
-    console.log(`   Total edges: ${stats.totalEdges}`);
-    console.log(`   Node types: ${JSON.stringify(stats.nodesByType)}`);
-    console.log(`   Edge types: ${JSON.stringify(stats.edgesByType)}`);
+    console.log(`   Total nodes: ${stats.nodeCount}`);
+    console.log(`   Total edges: ${stats.edgeCount}`);
+    console.log(`   Node types: ${JSON.stringify(stats.nodeTypes)}`);
+    console.log(`   Edge types: ${JSON.stringify(stats.relationshipTypes)}`);
 
     const expectedNodes = getAllIngredients().length + getAllPatterns().length;
     const expectedEdges = SUBSTITUTION_RELATIONSHIPS.length +
                           PATTERN_INGREDIENT_RELATIONSHIPS.length +
                           FLAVOR_PAIRINGS.length;
 
-    const nodesMatch = stats.totalNodes >= expectedNodes * 0.9; // Allow 10% tolerance
-    const edgesMatch = stats.totalEdges >= expectedEdges * 0.9;
+    const nodesMatch = stats.nodeCount >= expectedNodes * 0.9; // Allow 10% tolerance
+    const edgesMatch = stats.edgeCount >= expectedEdges * 0.9;
 
     const verified = nodesMatch && edgesMatch;
     console.log(`\n${verified ? '✅' : '⚠️'} Graph verification ${verified ? 'passed' : 'failed'}`);

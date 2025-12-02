@@ -33,13 +33,14 @@ export class CollectionService {
       }
 
       // Create each collection from config
-      for (const [key, config] of Object.entries(DEFAULT_COLLECTION_CONFIGS)) {
+      for (const [_key, config] of Object.entries(DEFAULT_COLLECTION_CONFIGS)) {
         try {
           await ruVectorService.createCollection(config.name, config.dimensions);
 
           // Store metadata
           const metadata: CollectionMetadata = {
             name: config.name as CollectionName,
+            collectionName: config.name,
             dimensions: config.dimensions,
             metric: config.metric,
             indexType: config.indexType,
@@ -84,6 +85,7 @@ export class CollectionService {
       // Create and cache metadata
       const metadata: CollectionMetadata = {
         name,
+        collectionName: name,
         dimensions: stats.dimensions,
         metric: 'cosine',
         indexType: 'hnsw',

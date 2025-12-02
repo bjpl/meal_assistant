@@ -24,7 +24,8 @@ docs/
 Thumbs.db
 
 # Node.js
-node_modules/
+node_modules
+**/node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -70,8 +71,10 @@ logs/
 *.log
 
 # Build artifacts
-dist/
-build/
+dist
+build
+**/dist
+**/build
 
 # Temporary files
 tmp/

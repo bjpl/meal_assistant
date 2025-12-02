@@ -12,74 +12,123 @@ import { MealPatternDocument, MealPatternMetadata } from '../types';
  */
 const MEAL_PATTERNS: MealPatternMetadata[] = [
   {
-    id: 'A',
+    patternId: 'A',
     name: 'Traditional',
-    description: 'Regular schedule with consistent energy throughout the day. Ideal for office work.',
-    optimalFor: ['Regular schedule', 'Consistent energy', 'Office work'],
+    description: 'Regular schedule with consistent energy throughout the day. Ideal for office work. Optimal for: Regular schedule, Consistent energy, Office work',
+    mealType: 'breakfast',
+    cuisines: [],
+    dietary: [],
+    ingredients: [],
+    prepTime: 30,
+    cookTime: 30,
+    difficulty: 'medium',
+    servings: 3,
+    cost: 'medium',
     totalCalories: 1800,
     totalProtein: 135,
-    mealsCount: 3,
-    tags: ['traditional', 'office', 'consistent-energy']
+    mealsCount: 3
   },
   {
-    id: 'B',
+    patternId: 'B',
     name: 'Reversed',
-    description: 'Light dinner preference with larger midday meal. Great for social lunches.',
-    optimalFor: ['Light dinner', 'Business lunches', 'Social midday meals'],
+    description: 'Light dinner preference with larger midday meal. Great for social lunches. Optimal for: Light dinner, Business lunches, Social midday meals',
+    mealType: 'lunch',
+    cuisines: [],
+    dietary: [],
+    ingredients: [],
+    prepTime: 40,
+    cookTime: 40,
+    difficulty: 'medium',
+    servings: 3,
+    cost: 'medium',
     totalCalories: 1800,
     totalProtein: 140,
-    mealsCount: 3,
-    tags: ['light-dinner', 'social', 'business-lunch']
+    mealsCount: 3
   },
   {
-    id: 'C',
+    patternId: 'C',
     name: 'Intermittent Fasting',
-    description: '16:8 fasting window. Skip breakfast, eat within 8-hour window.',
-    optimalFor: ['Fat burning', 'Mental clarity', 'Simplified planning'],
+    description: '16:8 fasting window. Skip breakfast, eat within 8-hour window. Optimal for: Fat burning, Mental clarity, Simplified planning',
+    mealType: 'lunch',
+    cuisines: [],
+    dietary: ['intermittent-fasting'],
+    ingredients: [],
+    prepTime: 25,
+    cookTime: 25,
+    difficulty: 'easy',
+    servings: 2,
+    cost: 'medium',
     totalCalories: 1800,
     totalProtein: 135,
-    mealsCount: 2,
-    tags: ['intermittent-fasting', '16-8', 'skip-breakfast', 'fat-burning']
+    mealsCount: 2
   },
   {
-    id: 'D',
+    patternId: 'D',
     name: 'Grazing - 4 Mini Meals',
-    description: 'Four evenly distributed smaller meals throughout the day for steady energy and blood sugar management.',
-    optimalFor: ['Steady energy', 'Prevents hunger', 'Blood sugar management'],
+    description: 'Four evenly distributed smaller meals throughout the day for steady energy and blood sugar management. Optimal for: Steady energy, Prevents hunger, Blood sugar management',
+    mealType: 'snack',
+    cuisines: [],
+    dietary: [],
+    ingredients: [],
+    prepTime: 20,
+    cookTime: 20,
+    difficulty: 'easy',
+    servings: 4,
+    cost: 'medium',
     totalCalories: 1800,
     totalProtein: 130,
-    mealsCount: 4,
-    tags: ['grazing', 'mini-meals', 'steady-energy', 'blood-sugar']
+    mealsCount: 4
   },
   {
-    id: 'E',
+    patternId: 'E',
     name: 'Grazing - Platter Method',
-    description: 'All-day access to pre-portioned platter with organized stations for visual eaters.',
-    optimalFor: ['Work from home', 'Visual eaters', 'Flexible schedule'],
+    description: 'All-day access to pre-portioned platter with organized stations for visual eaters. Optimal for: Work from home, Visual eaters, Flexible schedule',
+    mealType: 'snack',
+    cuisines: [],
+    dietary: [],
+    ingredients: [],
+    prepTime: 60,
+    cookTime: 0,
+    difficulty: 'easy',
+    servings: 1,
+    cost: 'medium',
     totalCalories: 1800,
     totalProtein: 135,
-    mealsCount: 1,
-    tags: ['grazing', 'platter', 'work-from-home', 'visual', 'flexible']
+    mealsCount: 1
   },
   {
-    id: 'F',
+    patternId: 'F',
     name: 'Big Breakfast',
-    description: 'Front-loaded calories with large morning meal for breakfast lovers and morning workout enthusiasts.',
-    optimalFor: ['Morning workouts', 'Weekend leisure', 'Breakfast lovers'],
+    description: 'Front-loaded calories with large morning meal for breakfast lovers and morning workout enthusiasts. Optimal for: Morning workouts, Weekend leisure, Breakfast lovers',
+    mealType: 'breakfast',
+    cuisines: [],
+    dietary: [],
+    ingredients: [],
+    prepTime: 35,
+    cookTime: 35,
+    difficulty: 'medium',
+    servings: 3,
+    cost: 'medium',
     totalCalories: 1800,
     totalProtein: 138,
-    mealsCount: 3,
-    tags: ['big-breakfast', 'morning-workout', 'front-loaded']
+    mealsCount: 3
   },
   {
-    id: 'G',
+    patternId: 'G',
     name: 'Morning Feast',
-    description: 'Early eating window ending at 1 PM for reverse intermittent fasting with large morning appetite.',
-    optimalFor: ['Reverse IF', 'Large morning appetite', 'Evening social plans'],
+    description: 'Early eating window ending at 1 PM for reverse intermittent fasting with large morning appetite. Optimal for: Reverse IF, Large morning appetite, Evening social plans',
+    mealType: 'breakfast',
+    cuisines: [],
+    dietary: ['reverse-intermittent-fasting'],
+    ingredients: [],
+    prepTime: 45,
+    cookTime: 45,
+    difficulty: 'medium',
+    servings: 3,
+    cost: 'medium',
     totalCalories: 1800,
     totalProtein: 142,
-    mealsCount: 3,
-    tags: ['reverse-if', 'early-window', 'morning-feast']
+    mealsCount: 3
   }
 ];
 
@@ -102,10 +151,8 @@ export async function seedPatterns(): Promise<void> {
       // Create text for embedding that captures the pattern's essence
       const textForEmbedding = [
         `${pattern.name}: ${pattern.description}`,
-        `Optimal for: ${pattern.optimalFor.join(', ')}`,
         `${pattern.totalCalories} calories, ${pattern.totalProtein}g protein`,
-        `${pattern.mealsCount} meals per day`,
-        `Tags: ${pattern.tags.join(', ')}`
+        `${pattern.mealsCount} meals per day`
       ].join('\n');
 
       // Generate embedding
@@ -113,7 +160,7 @@ export async function seedPatterns(): Promise<void> {
 
       // Create document
       const document: MealPatternDocument = {
-        id: `pattern_${pattern.id}`,
+        id: `pattern_${pattern.patternId}`,
         embedding,
         metadata: pattern,
         createdAt: new Date(),
@@ -124,14 +171,14 @@ export async function seedPatterns(): Promise<void> {
       const result = await ruVectorService.upsert('meal_patterns', document);
 
       if (result.success) {
-        console.log(`  ✓ Seeded pattern ${pattern.id}: ${pattern.name}`);
+        console.log(`  ✓ Seeded pattern ${pattern.patternId}: ${pattern.name}`);
         seededCount++;
       } else {
-        console.error(`  ✗ Failed to seed pattern ${pattern.id}:`, result.error);
+        console.error(`  ✗ Failed to seed pattern ${pattern.patternId}:`, result.error);
         errorCount++;
       }
     } catch (error) {
-      console.error(`  ✗ Error seeding pattern ${pattern.id}:`, error);
+      console.error(`  ✗ Error seeding pattern ${pattern.patternId}:`, error);
       errorCount++;
     }
   }
@@ -151,10 +198,10 @@ export async function clearPatterns(): Promise<void> {
 
   for (const pattern of MEAL_PATTERNS) {
     try {
-      await ruVectorService.delete('meal_patterns', `pattern_${pattern.id}`);
-      console.log(`  ✓ Cleared pattern ${pattern.id}`);
+      await ruVectorService.delete('meal_patterns', `pattern_${pattern.patternId}`);
+      console.log(`  ✓ Cleared pattern ${pattern.patternId}`);
     } catch (error) {
-      console.error(`  ✗ Error clearing pattern ${pattern.id}:`, error);
+      console.error(`  ✗ Error clearing pattern ${pattern.patternId}:`, error);
     }
   }
 
@@ -175,12 +222,12 @@ export async function verifyPatterns(): Promise<boolean> {
 
   for (const pattern of MEAL_PATTERNS) {
     try {
-      const doc = await ruVectorService.get('meal_patterns', `pattern_${pattern.id}`);
+      const doc = await ruVectorService.get('meal_patterns', `pattern_${pattern.patternId}`);
       if (doc) {
         verifiedCount++;
       }
     } catch (error) {
-      console.error(`  ✗ Pattern ${pattern.id} not found`);
+      console.error(`  ✗ Pattern ${pattern.patternId} not found`);
     }
   }
 
@@ -194,7 +241,7 @@ export async function verifyPatterns(): Promise<boolean> {
  * Get pattern by ID
  */
 export function getPatternById(id: string): MealPatternMetadata | undefined {
-  return MEAL_PATTERNS.find(p => p.id === id);
+  return MEAL_PATTERNS.find(p => p.patternId === id);
 }
 
 /**

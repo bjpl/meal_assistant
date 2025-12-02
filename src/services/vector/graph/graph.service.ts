@@ -40,6 +40,7 @@ export interface GraphPath {
  */
 export class GraphService {
   private graph: KnowledgeGraph;
+  private initialized: boolean = false;
 
   constructor() {
     // Initialize empty graph
@@ -56,6 +57,26 @@ export class GraphService {
         relationshipTypes: {} as any
       }
     };
+  }
+
+  /**
+   * Check if service is initialized
+   */
+  public isInitialized(): boolean {
+    return this.initialized;
+  }
+
+  /**
+   * Initialize the graph service
+   */
+  public async initialize(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
+
+    // Initialization logic (currently just marking as initialized)
+    this.initialized = true;
+    console.log('[GraphService] Initialized');
   }
 
   /**

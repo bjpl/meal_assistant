@@ -18,7 +18,7 @@ const router = Router();
  * POST /api/vector/search
  * Generic vector search across collections
  */
-router.post('/search', async (req: Request, res: Response): Promise<void> => {
+router.post('/search', async (req: Request, res: Response) => {
   try {
     const { collection, query, options } = req.body;
 
@@ -37,14 +37,14 @@ router.post('/search', async (req: Request, res: Response): Promise<void> => {
       filter: options?.filter
     });
 
-    res.json({
+    return res.json({
       success: true,
       results,
       count: results.length
     });
   } catch (error) {
     console.error('[Vector API] Search error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Search failed'
     });
   }
@@ -66,14 +66,14 @@ router.post('/meals/search', async (req: Request, res: Response) => {
 
     const results = await semanticSearchService.searchMeals(query, options);
 
-    res.json({
+    return res.json({
       success: true,
       results,
       count: results.length
     });
   } catch (error) {
     console.error('[Vector API] Meal search error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Meal search failed'
     });
   }
@@ -95,14 +95,14 @@ router.post('/ingredients/search', async (req: Request, res: Response) => {
 
     const results = await semanticSearchService.searchIngredients(query, options);
 
-    res.json({
+    return res.json({
       success: true,
       results,
       count: results.length
     });
   } catch (error) {
     console.error('[Vector API] Ingredient search error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Ingredient search failed'
     });
   }
@@ -119,14 +119,14 @@ router.get('/meals/:id/similar', async (req: Request, res: Response) => {
 
     const results = await semanticSearchService.findSimilar(id, topK);
 
-    res.json({
+    return res.json({
       success: true,
       results,
       count: results.length
     });
   } catch (error) {
     console.error('[Vector API] Similar meals error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Similar search failed'
     });
   }
@@ -151,14 +151,14 @@ router.post('/meals/search-by-ingredients', async (req: Request, res: Response) 
       options
     );
 
-    res.json({
+    return res.json({
       success: true,
       results,
       count: results.length
     });
   } catch (error) {
     console.error('[Vector API] Ingredient-based search error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Search failed'
     });
   }
@@ -180,13 +180,13 @@ router.post('/rag/query', async (req: Request, res: Response) => {
 
     const response = await ragService.query(question, context);
 
-    res.json({
+    return res.json({
       success: true,
       ...response
     });
   } catch (error) {
     console.error('[Vector API] RAG query error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'RAG query failed'
     });
   }
@@ -208,14 +208,14 @@ router.post('/recommendations/meals', async (req: Request, res: Response) => {
 
     const recommendations = await ragService.recommendMeals(request);
 
-    res.json({
+    return res.json({
       success: true,
       recommendations,
       count: recommendations.length
     });
   } catch (error) {
     console.error('[Vector API] Meal recommendation error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Recommendation failed'
     });
   }
@@ -237,14 +237,14 @@ router.post('/recommendations/ingredients', async (req: Request, res: Response) 
 
     const recommendations = await ragService.recommendIngredients(request);
 
-    res.json({
+    return res.json({
       success: true,
       recommendations,
       count: recommendations.length
     });
   } catch (error) {
     console.error('[Vector API] Ingredient recommendation error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Recommendation failed'
     });
   }
@@ -266,13 +266,13 @@ router.post('/graph/query', async (req: Request, res: Response) => {
 
     const result = await graphService.executeQuery(cypher, params);
 
-    res.json({
+    return res.json({
       success: true,
       ...result
     });
   } catch (error) {
     console.error('[Vector API] Graph query error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Graph query failed'
     });
   }
@@ -289,14 +289,14 @@ router.get('/graph/substitutions/:ingredientId', async (req: Request, res: Respo
 
     const substitutions = await graphService.getSubstitutions(ingredientId, topK);
 
-    res.json({
+    return res.json({
       success: true,
       substitutions,
       count: substitutions.length
     });
   } catch (error) {
     console.error('[Vector API] Substitution query error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Substitution query failed'
     });
   }
@@ -313,14 +313,14 @@ router.get('/graph/pairings/:ingredientId', async (req: Request, res: Response) 
 
     const pairings = await graphService.getFlavorPairings(ingredientId, topK);
 
-    res.json({
+    return res.json({
       success: true,
       pairings,
       count: pairings.length
     });
   } catch (error) {
     console.error('[Vector API] Pairing query error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Pairing query failed'
     });
   }
@@ -337,13 +337,13 @@ router.get('/graph/subgraph/:nodeId', async (req: Request, res: Response) => {
 
     const subgraph = await graphService.getSubgraph(nodeId, depth);
 
-    res.json({
+    return res.json({
       success: true,
       ...subgraph
     });
   } catch (error) {
     console.error('[Vector API] Subgraph query error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Subgraph query failed'
     });
   }
@@ -369,7 +369,7 @@ router.post('/embed', async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       embeddings,
       dimensions: embeddingService.getDimensions(),
@@ -377,7 +377,7 @@ router.post('/embed', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('[Vector API] Embedding error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Embedding generation failed'
     });
   }
@@ -387,12 +387,12 @@ router.post('/embed', async (req: Request, res: Response) => {
  * GET /api/vector/health
  * Health check endpoint
  */
-router.get('/health', async (req: Request, res: Response) => {
+router.get('/health', async (_req: Request, res: Response) => {
   try {
     const status = await ruVectorService.healthCheck();
     const stats = await graphService.getStats();
 
-    res.json({
+    return res.json({
       success: true,
       vector: status,
       graph: {
@@ -407,7 +407,7 @@ router.get('/health', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('[Vector API] Health check error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Health check failed'
     });
   }
@@ -417,18 +417,18 @@ router.get('/health', async (req: Request, res: Response) => {
  * GET /api/vector/collections
  * List all collections
  */
-router.get('/collections', async (req: Request, res: Response) => {
+router.get('/collections', async (_req: Request, res: Response) => {
   try {
     const collections = await ruVectorService.listCollections();
 
-    res.json({
+    return res.json({
       success: true,
       collections,
       count: collections.length
     });
   } catch (error) {
     console.error('[Vector API] List collections error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to list collections'
     });
   }
@@ -443,13 +443,13 @@ router.get('/collections/:name/stats', async (req: Request, res: Response) => {
     const { name } = req.params;
     const stats = await ruVectorService.getStats(name);
 
-    res.json({
+    return res.json({
       success: true,
       stats
     });
   } catch (error) {
     console.error('[Vector API] Get stats error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to get stats'
     });
   }
