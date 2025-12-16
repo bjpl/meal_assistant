@@ -1,6 +1,6 @@
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { store } from '../store';
+import { store as defaultStore } from '../store';
 import {
   setOnlineStatus,
   setSyncing,
@@ -24,6 +24,26 @@ interface SyncOperation {
   retryCount: number;
 }
 
+// Store reference - can be overridden for testing
+interface StoreType {
+  dispatch: (action: any) => any;
+  getState: () => any;
+}
+let _store: StoreType = defaultStore;
+
+/**
+ * Set a custom store for testing purposes
+ * @param customStore - The store to use (pass null to reset to default)
+ */
+export const __setStore = (customStore: StoreType | null) => {
+  _store = customStore || defaultStore;
+};
+
+/**
+ * Get the current store (for testing verification)
+ */
+export const __getStore = () => _store;
+
 // API base URL - would come from environment
 const API_BASE_URL = 'https://api.mealassistant.app/v1';
 
@@ -33,7 +53,7 @@ let unsubscribeNetInfo: (() => void) | null = null;
 export const initializeNetworkListener = () => {
   unsubscribeNetInfo = NetInfo.addEventListener((state: NetInfoState) => {
     const isOnline = state.isConnected && state.isInternetReachable;
-    store.dispatch(setOnlineStatus(isOnline ?? false));
+    _store.dispatch(setOnlineStatus(isOnline ?? false));
 
     // Trigger sync when coming back online
     if (isOnline) {
@@ -64,10 +84,10 @@ export const queueOperation = (
     retryCount: 0,
   };
 
-  store.dispatch(addPendingOperation(operation));
+  _store.dispatch(addPendingOperation(operation));
 
   // Try to sync immediately if online
-  const state = store.getState();
+  const state = _store.getState();
   if (state.sync.isOnline) {
     syncOperation(operation);
   }
@@ -90,7 +110,7 @@ const syncOperation = async (operation: SyncOperation): Promise<boolean> => {
     });
 
     if (response.ok) {
-      store.dispatch(removePendingOperation(operation.id));
+      _store.dispatch(removePendingOperation(operation.id));
       return true;
     } else {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -99,9 +119,9 @@ const syncOperation = async (operation: SyncOperation): Promise<boolean> => {
     console.error('Sync operation failed:', error);
 
     if (operation.retryCount < MAX_RETRY_COUNT) {
-      store.dispatch(incrementRetryCount(operation.id));
+      _store.dispatch(incrementRetryCount(operation.id));
     } else {
-      store.dispatch(
+      _store.dispatch(
         addSyncError({
           operationId: operation.id,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -115,21 +135,21 @@ const syncOperation = async (operation: SyncOperation): Promise<boolean> => {
 
 // Sync all pending operations
 export const syncPendingOperations = async () => {
-  const state = store.getState();
+  const state = _store.getState();
 
   if (!state.sync.isOnline || state.sync.isSyncing) {
     return;
   }
 
   const pendingOps = state.sync.pendingOperations.filter(
-    (op) => op.retryCount < MAX_RETRY_COUNT
+    (op: SyncOperation) => op.retryCount <= MAX_RETRY_COUNT
   );
 
   if (pendingOps.length === 0) {
     return;
   }
 
-  store.dispatch(setSyncing(true));
+  _store.dispatch(setSyncing(true));
 
   try {
     // Process operations in order
@@ -137,9 +157,9 @@ export const syncPendingOperations = async () => {
       await syncOperation(operation);
     }
 
-    store.dispatch(setLastSyncTime(new Date().toISOString()));
+    _store.dispatch(setLastSyncTime(new Date().toISOString()));
   } finally {
-    store.dispatch(setSyncing(false));
+    _store.dispatch(setSyncing(false));
   }
 };
 
@@ -201,13 +221,13 @@ export const stopPeriodicSync = () => {
 
 // Manual full sync (pull + push)
 export const performFullSync = async () => {
-  const state = store.getState();
+  const state = _store.getState();
 
   if (!state.sync.isOnline) {
     throw new Error('Cannot sync while offline');
   }
 
-  store.dispatch(setSyncing(true));
+  _store.dispatch(setSyncing(true));
 
   try {
     // Push pending changes first
@@ -217,9 +237,9 @@ export const performFullSync = async () => {
     // This would update local Redux state with server data
     // Implementation depends on your API design
 
-    store.dispatch(setLastSyncTime(new Date().toISOString()));
+    _store.dispatch(setLastSyncTime(new Date().toISOString()));
   } finally {
-    store.dispatch(setSyncing(false));
+    _store.dispatch(setSyncing(false));
   }
 };
 

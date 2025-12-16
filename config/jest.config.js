@@ -52,7 +52,8 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@tests/(.*)$': '<rootDir>/tests/$1',
     // Mock React Native modules
-    '^react-native$': 'react-native-web',
+    '^react-native$': '<rootDir>/tests/__mocks__/react-native-web.js',
+    '^react-native-web$': '<rootDir>/tests/__mocks__/react-native-web.js',
     '^@react-native-async-storage/async-storage$': '<rootDir>/tests/__mocks__/async-storage.js',
     '^@react-native-community/netinfo$': '<rootDir>/tests/__mocks__/netinfo.js',
     '^expo-notifications$': '<rootDir>/tests/__mocks__/expo-notifications.js',
@@ -62,9 +63,11 @@ module.exports = {
     // Mock Redux and store
     '^redux-persist$': '<rootDir>/tests/__mocks__/redux-persist.js',
     '^redux-persist/(.*)$': '<rootDir>/tests/__mocks__/redux-persist.js',
-    // Mock the mobile store
+    // Mock the mobile store - match all possible path resolutions
     '^.*/mobile/store$': '<rootDir>/tests/__mocks__/store.js',
     '^.*/mobile/store/index$': '<rootDir>/tests/__mocks__/store.js',
+    '^.*/mobile/store/index\\.ts$': '<rootDir>/tests/__mocks__/store.js',
+    '^.*/mobile/store/index\\.tsx$': '<rootDir>/tests/__mocks__/store.js',
     // Mock image and asset imports
     '\\.(jpg|jpeg|png|gif|svg|ttf|woff|woff2)$': '<rootDir>/tests/__mocks__/fileMock.js'
   },
