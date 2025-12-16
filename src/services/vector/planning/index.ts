@@ -43,8 +43,11 @@ export {
   SeedInitialData,
   ImplementCoreService,
   ImplementEmbeddingService,
+  ImplementCollectionManager,
   CreateAPIRoutes,
+  ImplementHealthChecks,
   ImplementSemanticMealSearch,
+  ImplementSemanticRecipeSearch,
   ImplementNLMealLogging,
   IntegrateMobileSearch,
   BuildKnowledgeGraph,
@@ -55,6 +58,7 @@ export {
   ImplementLearningPipeline,
   WriteUnitTests,
   WriteIntegrationTests,
+  WriteDocumentation,
 } from './actions';
 
 // Planner exports

@@ -14,18 +14,17 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 
 // Route imports
-const patternRoutes = require('./routes/patterns').default;
-const mealRoutes = require('./routes/meals').default;
-const authRoutes = require('./routes/auth').default;
-const vectorRoutes = require('./routes/vector.routes').default;
-// const inventoryRoutes = require('./routes/inventory');
-// const prepRoutes = require('./routes/prep');
-// const shoppingRoutes = require('./routes/shopping');
-// const analyticsRoutes = require('./routes/analytics');
-// const hydrationRoutes = require('./routes/hydration');
-// const adRoutes = require('./routes/ads');
-// const templateRoutes = require('./routes/templates');
-// const priceRoutes = require('./routes/prices');
+import patternRoutes from './routes/patterns';
+import mealRoutes from './routes/meals';
+import authRoutes from './routes/auth';
+import vectorRoutes from './routes/vector.routes';
+import inventoryRoutes from './routes/inventory.routes';
+import prepRoutes from './routes/prep.routes';
+import shoppingRoutes from './routes/shopping.routes';
+import analyticsRoutes from './routes/analytics.routes';
+import hydrationRoutes from './routes/hydration.routes';
+// Price Intelligence routes - Safeway weekly ad ingestion
+import priceRoutes from './routes/prices.routes';
 
 // Middleware imports
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -69,15 +68,13 @@ app.use('/api/auth', authRoutes);
 app.use('/api/patterns', patternRoutes);
 app.use('/api/meals', mealRoutes);
 app.use('/api/vector', vectorRoutes);
-// app.use('/api/inventory', inventoryRoutes);
-// app.use('/api/prep', prepRoutes);
-// app.use('/api/shopping', shoppingRoutes);
-// app.use('/api/analytics', analyticsRoutes);
-// app.use('/api/hydration', hydrationRoutes);
-// app.use('/api/ads', adRoutes);
-// app.use('/api/templates', templateRoutes);
-// app.use('/api/prices', priceRoutes);
-// app.use('/api/deals', priceRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/prep', prepRoutes);
+app.use('/api/shopping', shoppingRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/hydration', hydrationRoutes);
+// Price Intelligence routes - deal tracking, smart shopping recommendations
+app.use('/api/prices', priceRoutes);
 
 // Error handling
 app.use(notFoundHandler);

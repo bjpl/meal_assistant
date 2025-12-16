@@ -281,6 +281,70 @@ export const ImplementEmbeddingService: Action = {
   risk: 'high',
 };
 
+export const ImplementCollectionManager: Action = {
+  id: 'implement-collection-manager',
+  name: 'Implement Collection Manager',
+  description: 'Create collection management service for CRUD operations',
+  phase: 1,
+  preconditions: {
+    coreServiceExists: true,
+  },
+  effects: {
+    collectionManagerExists: true,
+  },
+  cost: 4,
+  commands: [
+    'Create CollectionManager class',
+    'Implement collection CRUD operations',
+    'Add schema validation',
+  ],
+  files: [
+    'src/services/vector/core/collection-manager.ts',
+  ],
+  tests: [
+    'tests/unit/services/collection-manager.test.ts',
+  ],
+  validation: [
+    'Collection operations work correctly',
+    'Schema validation catches errors',
+  ],
+  estimatedHours: 3,
+  risk: 'low',
+};
+
+export const ImplementHealthChecks: Action = {
+  id: 'implement-health-checks',
+  name: 'Implement Health Checks',
+  description: 'Add health check endpoints and monitoring',
+  phase: 1,
+  preconditions: {
+    coreServiceExists: true,
+    apiRoutesExist: true,
+  },
+  effects: {
+    healthChecksWork: true,
+  },
+  cost: 2,
+  commands: [
+    'Create health check endpoints',
+    'Add vector service health monitoring',
+    'Implement readiness probes',
+  ],
+  files: [
+    'src/api/routes/health.ts',
+    'src/services/vector/core/health-monitor.ts',
+  ],
+  tests: [
+    'tests/unit/services/health.test.ts',
+  ],
+  validation: [
+    'Health endpoints return correct status',
+    'Unhealthy conditions are detected',
+  ],
+  estimatedHours: 2,
+  risk: 'low',
+};
+
 export const CreateAPIRoutes: Action = {
   id: 'create-api-routes',
   name: 'Create Vector API Routes',
@@ -394,6 +458,37 @@ export const ImplementNLMealLogging: Action = {
   ],
   estimatedHours: 7,
   risk: 'high',
+};
+
+export const ImplementSemanticRecipeSearch: Action = {
+  id: 'implement-semantic-recipe-search',
+  name: 'Implement Semantic Recipe Search',
+  description: 'Enable natural language search for recipes',
+  phase: 2,
+  preconditions: {
+    semanticMealSearchWorks: true,
+  },
+  effects: {
+    semanticRecipeSearchWorks: true,
+  },
+  cost: 4,
+  commands: [
+    'Extend semantic search to recipes',
+    'Add recipe-specific filters',
+    'Implement ingredient-based search',
+  ],
+  files: [
+    'src/services/vector/search/recipe-search.ts',
+  ],
+  tests: [
+    'tests/integration/vector/recipe-search.test.ts',
+  ],
+  validation: [
+    'Recipe search returns relevant results',
+    'Ingredient filtering works correctly',
+  ],
+  estimatedHours: 4,
+  risk: 'low',
 };
 
 export const IntegrateMobileSearch: Action = {
@@ -717,6 +812,37 @@ export const WriteIntegrationTests: Action = {
   risk: 'medium',
 };
 
+export const WriteDocumentation: Action = {
+  id: 'write-documentation',
+  name: 'Write Documentation',
+  description: 'Create comprehensive documentation for vector services',
+  phase: 2,
+  preconditions: {
+    apiRoutesExist: true,
+    integrationTestsPass: true,
+  },
+  effects: {
+    documentationComplete: true,
+  },
+  cost: 4,
+  commands: [
+    'Write API documentation',
+    'Create usage guides',
+    'Document configuration options',
+    'Add code examples',
+  ],
+  files: [
+    'docs/services/vector-service.md',
+    'docs/api/vector-endpoints.md',
+  ],
+  validation: [
+    'Documentation is complete and accurate',
+    'Examples work as documented',
+  ],
+  estimatedHours: 4,
+  risk: 'low',
+};
+
 // ============================================
 // ACTION REGISTRY
 // ============================================
@@ -731,10 +857,13 @@ export const ALL_ACTIONS: Action[] = [
   // Phase 1: Core
   ImplementCoreService,
   ImplementEmbeddingService,
+  ImplementCollectionManager,
   CreateAPIRoutes,
+  ImplementHealthChecks,
 
   // Phase 2: Search
   ImplementSemanticMealSearch,
+  ImplementSemanticRecipeSearch,
   ImplementNLMealLogging,
   IntegrateMobileSearch,
 
@@ -753,6 +882,7 @@ export const ALL_ACTIONS: Action[] = [
   // Quality
   WriteUnitTests,
   WriteIntegrationTests,
+  WriteDocumentation,
 ];
 
 /**
