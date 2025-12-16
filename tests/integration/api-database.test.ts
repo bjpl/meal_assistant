@@ -61,6 +61,7 @@ const createMockDatabase = () => {
   const patterns = new Map<string, any>();
   const hydrationEntries = new Map<string, any>();
   let connected = false;
+  let idCounter = 0; // Ensure unique IDs across rapid operations
 
   return {
     async connect() {
@@ -86,7 +87,7 @@ const createMockDatabase = () => {
       }
 
       const user = {
-        id: `user-${Date.now()}`,
+        id: `user-${Date.now()}-${++idCounter}`,
         email,
         passwordHash: password,
         profile: {
@@ -131,7 +132,7 @@ const createMockDatabase = () => {
       if (!connected) throw new Error('Database not connected');
 
       const pattern = {
-        id: `pattern-${Date.now()}`,
+        id: `pattern-${Date.now()}-${++idCounter}`,
         userId,
         type,
         date,
@@ -154,7 +155,7 @@ const createMockDatabase = () => {
       if (!connected) throw new Error('Database not connected');
 
       const entry = {
-        id: `hydration-${Date.now()}`,
+        id: `hydration-${Date.now()}-${++idCounter}`,
         userId,
         type,
         amountOz,
@@ -169,12 +170,12 @@ const createMockDatabase = () => {
     async getHydrationEntriesByDate(userId: string, date: string) {
       if (!connected) throw new Error('Database not connected');
 
-      const targetDate = new Date(date);
+      // Use ISO date strings for consistent timezone-independent comparison
+      const targetDateStr = date.split('T')[0]; // Extract YYYY-MM-DD from input
       return Array.from(hydrationEntries.values())
         .filter(e => {
-          const entryDate = new Date(e.loggedAt);
-          return e.userId === userId &&
-                 entryDate.toDateString() === targetDate.toDateString();
+          const entryDateStr = e.loggedAt.toISOString().split('T')[0];
+          return e.userId === userId && entryDateStr === targetDateStr;
         });
     },
 
