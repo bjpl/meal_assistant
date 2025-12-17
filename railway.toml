@@ -2,8 +2,8 @@
 # Meal Assistant Application Stack
 
 [build]
-builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile.api"
+builder = "NIXPACKS"
+buildCommand = "npm ci --legacy-peer-deps && npm run build"
 
 [deploy]
 startCommand = "node dist/src/api/server.js"
