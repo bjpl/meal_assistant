@@ -35,9 +35,9 @@ docs
 .eslintrc*
 .prettierrc*
 jest.config.*
-tsconfig*.json
 *.config.js
 *.config.ts
+# Note: tsconfig.json is REQUIRED for build - do not ignore
 
 # Railway/Docker files
 Dockerfile*
