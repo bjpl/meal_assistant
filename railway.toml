@@ -1,8 +1,7 @@
 # Railway.toml - Meal Assistant API deployment
 
 [build]
-builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
+builder = "NIXPACKS"
 
 [deploy]
 startCommand = "node dist/src/api/server.js"
