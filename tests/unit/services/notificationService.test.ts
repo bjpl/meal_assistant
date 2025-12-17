@@ -7,13 +7,6 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Mock modules before imports
-jest.mock('react-native', () => ({
-  Platform: {
-    OS: 'ios',
-  },
-}));
-
 jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn(),
   setItem: jest.fn(),
@@ -66,7 +59,8 @@ describe('notificationService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (Platform.OS as string) = 'ios';
+    // Reset Platform.OS to ios for each test
+    (Platform as any).OS = 'ios';
 
     // Reset expo-device mock
     Device = require('expo-device');
@@ -91,7 +85,7 @@ describe('notificationService', () => {
     });
 
     it('should create Android notification channels on Android platform', async () => {
-      (Platform.OS as string) = 'android';
+      (Platform as any).OS = 'android';
 
       await notificationService.initializeNotifications();
 
@@ -111,7 +105,7 @@ describe('notificationService', () => {
     });
 
     it('should not create Android channels on iOS platform', async () => {
-      (Platform.OS as string) = 'ios';
+      (Platform as any).OS = 'ios';
 
       await notificationService.initializeNotifications();
 
@@ -231,7 +225,7 @@ describe('notificationService', () => {
     });
 
     it('should use correct platform for Android', async () => {
-      (Platform.OS as string) = 'android';
+      (Platform as any).OS = 'android';
       (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(null);
       mockGetExpoPushTokenAsync.mockResolvedValueOnce({ data: mockToken.token });
 

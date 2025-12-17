@@ -4,7 +4,7 @@
  */
 
 import { RuVectorService } from '../../../../src/services/vector/core/ruvector.service';
-import { VectorDocument, SearchQuery } from '../../../../src/services/vector/types';
+import { VectorDocument } from '../../../../src/services/vector/types';
 
 describe('RuVectorService', () => {
   let service: RuVectorService;
@@ -12,20 +12,13 @@ describe('RuVectorService', () => {
   beforeAll(async () => {
     // Initialize with test configuration
     service = new RuVectorService({
-      dataPath: './test-data/ruvector',
-      collections: {
-        meal_patterns: {
-          name: 'meal_patterns',
-          dimension: 384,
-          metric: 'cosine',
-          indexType: 'hnsw'
-        }
-      },
-      embeddingModel: 'all-MiniLM-L6-v2',
-      defaultTopK: 10
+      apiUrl: 'http://localhost:8000',
+      apiKey: 'test-key'
     });
 
     await service.initialize();
+    // Create the test collection
+    await service.createCollection('meal_patterns', 384);
   });
 
   afterAll(async () => {
@@ -40,8 +33,25 @@ describe('RuVectorService', () => {
 
     it('should have correct configuration', () => {
       const config = service.getConfig();
-      expect(config.embeddingModel).toBe('all-MiniLM-L6-v2');
-      expect(config.defaultTopK).toBe(10);
+      expect(config.apiUrl).toBe('http://localhost:8000');
+    });
+  });
+
+  describe('collection operations', () => {
+    it('should create a collection', async () => {
+      const result = await service.createCollection('test_collection', 384);
+      expect(result.success).toBe(true);
+    });
+
+    it('should list collections', async () => {
+      const collections = await service.listCollections();
+      expect(collections).toContain('meal_patterns');
+    });
+
+    it('should handle creating existing collection', async () => {
+      const result = await service.createCollection('meal_patterns', 384);
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('already exists');
     });
   });
 
@@ -112,9 +122,8 @@ describe('RuVectorService', () => {
 
       const result = await service.batchUpsert('meal_patterns', documents);
 
-      expect(result.success).toBe(true);
-      expect(result.successCount).toBe(3);
-      expect(result.failureCount).toBe(0);
+      expect(result.successful).toBe(3);
+      expect(result.failed).toBe(0);
     });
   });
 
@@ -163,13 +172,11 @@ describe('RuVectorService', () => {
       await service.batchUpsert('meal_patterns', testDocs);
     });
 
-    it('should perform semantic search', async () => {
-      const query: SearchQuery = {
-        text: 'high protein breakfast',
+    it('should perform vector search', async () => {
+      const results = await service.search('meal_patterns', {
+        vector: new Array(384).fill(0.5),
         topK: 5
-      };
-
-      const results = await service.search('meal_patterns', query);
+      });
 
       expect(results.length).toBeGreaterThan(0);
       expect(results.length).toBeLessThanOrEqual(5);
@@ -177,30 +184,26 @@ describe('RuVectorService', () => {
     });
 
     it('should filter search results by metadata', async () => {
-      const query: SearchQuery = {
-        embedding: new Array(384).fill(0.5),
+      const results = await service.search('meal_patterns', {
+        vector: new Array(384).fill(0.5),
         topK: 5,
         filter: {
-          category: { $eq: 'meal' }
+          equals: { category: 'meal' }
         }
-      };
-
-      const results = await service.search('meal_patterns', query);
+      });
 
       expect(results.length).toBeGreaterThan(0);
       results.forEach(result => {
-        expect(result.metadata.category).toBe('meal');
+        expect(result.document.category).toBe('meal');
       });
     });
 
     it('should apply score threshold', async () => {
-      const query: SearchQuery = {
-        embedding: new Array(384).fill(0.5),
+      const results = await service.search('meal_patterns', {
+        vector: new Array(384).fill(0.5),
         topK: 10,
-        minScore: 0.7
-      };
-
-      const results = await service.search('meal_patterns', query);
+        threshold: 0.7
+      });
 
       results.forEach(result => {
         expect(result.score).toBeGreaterThanOrEqual(0.7);
@@ -208,12 +211,10 @@ describe('RuVectorService', () => {
     });
 
     it('should return results sorted by score', async () => {
-      const query: SearchQuery = {
-        embedding: new Array(384).fill(0.5),
+      const results = await service.search('meal_patterns', {
+        vector: new Array(384).fill(0.5),
         topK: 5
-      };
-
-      const results = await service.search('meal_patterns', query);
+      });
 
       for (let i = 1; i < results.length; i++) {
         expect(results[i - 1].score).toBeGreaterThanOrEqual(results[i].score);
@@ -235,81 +236,81 @@ describe('RuVectorService', () => {
 
       expect(document).toBeNull();
     });
-
-    it('should retrieve multiple documents by IDs', async () => {
-      const documents = await service.batchGet('meal_patterns', [
-        'test-doc-1',
-        'batch-1',
-        'batch-2'
-      ]);
-
-      expect(documents.length).toBe(3);
-      documents.forEach(doc => {
-        expect(doc).toBeDefined();
-        expect(doc.id).toBeDefined();
-      });
-    });
   });
 
   describe('delete operations', () => {
     it('should delete a document', async () => {
-      const result = await service.delete('meal_patterns', 'batch-3');
+      // First ensure the document exists
+      const doc: VectorDocument = {
+        id: 'delete-test-doc',
+        embedding: new Array(384).fill(0.1),
+        metadata: { name: 'Delete Test' },
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      await service.upsert('meal_patterns', doc);
+
+      const result = await service.delete('meal_patterns', 'delete-test-doc');
 
       expect(result.success).toBe(true);
 
       // Verify deletion
-      const document = await service.get('meal_patterns', 'batch-3');
+      const document = await service.get('meal_patterns', 'delete-test-doc');
       expect(document).toBeNull();
     });
 
-    it('should batch delete multiple documents', async () => {
-      const result = await service.batchDelete('meal_patterns', [
-        'batch-1',
-        'batch-2'
-      ]);
-
-      expect(result.success).toBe(true);
-      expect(result.successCount).toBe(2);
-
-      // Verify deletions
-      const doc1 = await service.get('meal_patterns', 'batch-1');
-      const doc2 = await service.get('meal_patterns', 'batch-2');
-      expect(doc1).toBeNull();
-      expect(doc2).toBeNull();
-    });
-
-    it('should handle deletion of non-existent document gracefully', async () => {
-      const result = await service.delete('meal_patterns', 'non-existent');
-
-      // Should not throw error
-      expect(result).toBeDefined();
+    it('should throw error for non-existent document deletion', async () => {
+      await expect(
+        service.delete('meal_patterns', 'definitely-not-exists')
+      ).rejects.toThrow();
     });
   });
 
-  describe('statistics and monitoring', () => {
+  describe('statistics', () => {
     it('should return collection statistics', async () => {
       const stats = await service.getStats('meal_patterns');
 
       expect(stats.totalDocuments).toBeGreaterThanOrEqual(0);
-      expect(stats.dimension).toBe(384);
-      expect(stats.metric).toBeDefined();
+      expect(stats.dimensions).toBe(384);
+      expect(stats.collectionName).toBe('meal_patterns');
     });
 
-    it('should track operation metrics', () => {
-      const metrics = service.getMetrics();
+    it('should throw error for non-existent collection stats', async () => {
+      await expect(
+        service.getStats('non_existent_collection')
+      ).rejects.toThrow();
+    });
+  });
 
-      expect(metrics.totalSearches).toBeGreaterThanOrEqual(0);
-      expect(metrics.totalUpserts).toBeGreaterThanOrEqual(0);
-      expect(metrics.totalDeletes).toBeGreaterThanOrEqual(0);
-      expect(metrics.averageSearchLatency).toBeGreaterThanOrEqual(0);
+  describe('clear operations', () => {
+    it('should clear all documents from collection', async () => {
+      // Create a separate collection for clear test
+      await service.createCollection('clear_test', 384);
+
+      // Add some documents
+      await service.upsert('clear_test', {
+        id: 'clear-1',
+        embedding: new Array(384).fill(0.1),
+        metadata: { name: 'Clear 1' },
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      // Clear
+      const result = await service.clear('clear_test');
+      expect(result.success).toBe(true);
+
+      // Verify
+      const stats = await service.getStats('clear_test');
+      expect(stats.totalDocuments).toBe(0);
     });
   });
 
   describe('error handling', () => {
     it('should handle invalid collection name', async () => {
       await expect(
-        service.search('invalid_collection' as any, {
-          text: 'test',
+        service.search('invalid_collection', {
+          vector: new Array(384).fill(0.5),
           topK: 5
         })
       ).rejects.toThrow();
@@ -329,29 +330,37 @@ describe('RuVectorService', () => {
       ).rejects.toThrow();
     });
 
-    it('should handle search with missing query data', async () => {
-      const invalidQuery: SearchQuery = {
-        topK: 5
-        // Missing both text and embedding
-      } as any;
-
+    it('should handle search with missing query vector', async () => {
       await expect(
-        service.search('meal_patterns', invalidQuery)
+        service.search('meal_patterns', {
+          topK: 5
+        } as any)
       ).rejects.toThrow();
+    });
+  });
+
+  describe('health check', () => {
+    it('should return healthy status when initialized', async () => {
+      const health = await service.healthCheck();
+      expect(health.healthy).toBe(true);
+    });
+
+    it('should return unhealthy when not initialized', async () => {
+      const tempService = new RuVectorService({
+        apiUrl: 'http://localhost:8000',
+        apiKey: 'test-key'
+      });
+
+      const health = await tempService.healthCheck();
+      expect(health.healthy).toBe(false);
     });
   });
 
   describe('cleanup and resource management', () => {
     it('should close connections properly', async () => {
       const tempService = new RuVectorService({
-        dataPath: './test-data/temp',
-        collections: {
-          test_collection: {
-            name: 'test_collection',
-            dimension: 384,
-            metric: 'cosine'
-          }
-        }
+        apiUrl: 'http://localhost:8000',
+        apiKey: 'test-key'
       });
 
       await tempService.initialize();
@@ -363,22 +372,17 @@ describe('RuVectorService', () => {
 
     it('should prevent operations after closing', async () => {
       const tempService = new RuVectorService({
-        dataPath: './test-data/temp2',
-        collections: {
-          test_collection: {
-            name: 'test_collection',
-            dimension: 384,
-            metric: 'cosine'
-          }
-        }
+        apiUrl: 'http://localhost:8000',
+        apiKey: 'test-key'
       });
 
       await tempService.initialize();
+      await tempService.createCollection('temp_collection', 384);
       await tempService.close();
 
       await expect(
-        tempService.search('test_collection' as any, {
-          text: 'test',
+        tempService.search('temp_collection', {
+          vector: new Array(384).fill(0.5),
           topK: 5
         })
       ).rejects.toThrow();
