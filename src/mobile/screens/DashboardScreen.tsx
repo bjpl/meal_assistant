@@ -155,8 +155,11 @@ export const DashboardScreen: React.FC = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Header with Pattern Color Accent */}
+        <View style={[
+          styles.header,
+          { borderLeftWidth: 4, borderLeftColor: colors.patterns[activePatternId || 'A'] }
+        ]}>
           <View>
             <Text style={styles.greeting}>Good Morning</Text>
             <Text style={styles.date}>{formatDate()}</Text>
@@ -288,45 +291,6 @@ export const DashboardScreen: React.FC = () => {
             </Card>
           </View>
         )}
-
-        {/* Pattern Selection */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Quick Pattern Switch</Text>
-            <Button
-              title="View All"
-              onPress={handleOpenSwitchModal}
-              variant="ghost"
-              size="small"
-            />
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {patterns.map((pattern) => (
-              <Card
-                key={pattern.id}
-                onPress={() => setSelectedPattern(pattern.id)}
-                accentColor={colors.patterns[pattern.id]}
-                style={StyleSheet.flatten([
-                  styles.miniPatternCard,
-                  activePatternId === pattern.id && styles.miniPatternCardSelected,
-                ])}
-              >
-                <Text
-                  style={[
-                    styles.miniPatternLetter,
-                    { color: colors.patterns[pattern.id] },
-                  ]}
-                >
-                  {pattern.id}
-                </Text>
-                <Text style={styles.miniPatternName}>{pattern.name}</Text>
-                <Text style={styles.miniPatternCalories}>
-                  {pattern.totalCalories} cal
-                </Text>
-              </Card>
-            ))}
-          </ScrollView>
-        </View>
 
         {/* Recent Activity */}
         <View style={styles.section}>
@@ -561,30 +525,6 @@ const styles = StyleSheet.create({
   mealDivider: {
     height: 1,
     backgroundColor: colors.border.light,
-  },
-  miniPatternCard: {
-    width: 100,
-    alignItems: 'center',
-    padding: spacing.md,
-    marginLeft: spacing.md,
-    marginRight: spacing.xs,
-  },
-  miniPatternCardSelected: {
-    borderWidth: 2,
-    borderColor: colors.primary.main,
-  },
-  miniPatternLetter: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  miniPatternName: {
-    ...typography.caption,
-    color: colors.text.primary,
-    marginTop: spacing.xs,
-  },
-  miniPatternCalories: {
-    ...typography.caption,
-    color: colors.text.secondary,
   },
   activityCard: {
     marginHorizontal: spacing.md,

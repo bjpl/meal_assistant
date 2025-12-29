@@ -628,7 +628,8 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   itemCardChecked: {
-    opacity: 0.7,
+    opacity: 0.5, // More distinct from unchecked items
+    backgroundColor: colors.background.tertiary, // Subtle visual change
   },
   itemRow: {
     flexDirection: 'row',

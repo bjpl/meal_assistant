@@ -53,8 +53,8 @@ export const colors = {
 
   text: {
     primary: '#212121',
-    secondary: '#757575',
-    disabled: '#BDBDBD',
+    secondary: '#666666', // Improved contrast (5.2:1 ratio vs 4.48:1)
+    disabled: '#9E9E9E', // Darker for better visibility
     inverse: '#FFFFFF',
   },
 
@@ -79,6 +79,12 @@ export const spacing = {
   lg: 24,
   xl: 32,
   xxl: 48,
+};
+
+// Minimum touch target sizes (accessibility)
+export const touchTargets = {
+  min: 44, // iOS Human Interface Guidelines minimum
+  comfortable: 48, // Material Design recommended
 };
 
 export const borderRadius = {

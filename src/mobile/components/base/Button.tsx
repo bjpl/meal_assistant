@@ -7,7 +7,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { colors, spacing, borderRadius, typography } from '../../utils/theme';
+import { colors, spacing, borderRadius, typography, touchTargets } from '../../utils/theme';
 
 export interface ButtonProps {
   title: string;
@@ -37,7 +37,11 @@ export const Button: React.FC<ButtonProps> = ({
   textStyle,
 }) => {
   const getBackgroundColor = () => {
-    if (disabled) return colors.text.disabled;
+    if (disabled) {
+      return variant === 'outline' || variant === 'ghost'
+        ? 'transparent'
+        : colors.border.light; // Lighter background for better contrast
+    }
     switch (variant) {
       case 'primary':
         return colors.primary.main;
@@ -52,7 +56,7 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const getTextColor = () => {
-    if (disabled) return colors.text.inverse;
+    if (disabled) return colors.text.disabled; // Darker text on light bg for visibility
     switch (variant) {
       case 'primary':
         return colors.primary.contrast;
@@ -67,13 +71,26 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const getPadding = () => {
+    // Ensure minimum touch target height of 44px
     switch (size) {
       case 'small':
-        return { paddingVertical: spacing.xs, paddingHorizontal: spacing.sm };
+        return {
+          paddingVertical: spacing.sm, // 8px * 2 + text = ~36px, minHeight enforces 44px
+          paddingHorizontal: spacing.md,
+          minHeight: touchTargets.min,
+        };
       case 'large':
-        return { paddingVertical: spacing.md, paddingHorizontal: spacing.xl };
+        return {
+          paddingVertical: spacing.md,
+          paddingHorizontal: spacing.xl,
+          minHeight: touchTargets.comfortable,
+        };
       default:
-        return { paddingVertical: spacing.sm, paddingHorizontal: spacing.md };
+        return {
+          paddingVertical: spacing.sm,
+          paddingHorizontal: spacing.md,
+          minHeight: touchTargets.min,
+        };
     }
   };
 

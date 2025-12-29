@@ -33,7 +33,7 @@ export const TrackingScreen: React.FC = () => {
 
   const [showCamera, setShowCamera] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [satisfaction, setSatisfaction] = useState(0);
+  const [satisfaction, setSatisfaction] = useState(3); // Default to neutral (3 stars)
   const [energyLevel, setEnergyLevel] = useState(50);
   const [hungerBefore, setHungerBefore] = useState(70);
   const [hungerAfter, setHungerAfter] = useState(20);
