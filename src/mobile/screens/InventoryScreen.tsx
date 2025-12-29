@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,22 @@ import {
   FlatList,
   RefreshControl,
   Modal,
+  ActivityIndicator,
+  Alert,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '../store';
+import {
+  fetchInventory,
+  addInventoryItem,
+  updateInventoryItem,
+  deleteInventoryItem,
+  selectInventoryItems,
+  selectInventoryLoading
+} from '../store/slices/inventorySlice';
 import { Card } from '../components/base/Card';
 import { Button } from '../components/base/Button';
 import { Input } from '../components/base/Input';
@@ -18,106 +32,34 @@ import { InventoryItemComponent } from '../components/inventory/InventoryItem';
 import { colors, spacing, typography, borderRadius } from '../utils/theme';
 import { InventoryItem } from '../types';
 
-// Sample data
-const sampleInventory: InventoryItem[] = [
-  {
-    id: '1',
-    name: 'Chicken Breast',
-    category: 'protein',
-    quantity: 4,
-    unit: 'lbs',
-    expiryDate: '2025-11-25',
-    purchaseDate: '2025-11-20',
-    location: 'fridge',
-    pricePerUnit: 4.99,
-    store: 'Costco',
-  },
-  {
-    id: '2',
-    name: 'Basmati Rice',
-    category: 'carb',
-    quantity: 10,
-    unit: 'lbs',
-    purchaseDate: '2025-11-15',
-    location: 'pantry',
-    pricePerUnit: 1.29,
-    store: 'Costco',
-  },
-  {
-    id: '3',
-    name: 'Mixed Vegetables',
-    category: 'vegetable',
-    quantity: 2,
-    unit: 'bags',
-    expiryDate: '2025-11-23',
-    purchaseDate: '2025-11-20',
-    location: 'fridge',
-  },
-  {
-    id: '4',
-    name: 'Greek Yogurt',
-    category: 'dairy',
-    quantity: 3,
-    unit: 'cups',
-    expiryDate: '2025-11-26',
-    purchaseDate: '2025-11-19',
-    location: 'fridge',
-    pricePerUnit: 1.49,
-    store: 'Safeway',
-  },
-  {
-    id: '5',
-    name: 'Salmon Fillets',
-    category: 'protein',
-    quantity: 2,
-    unit: 'lbs',
-    expiryDate: '2026-02-15',
-    purchaseDate: '2025-11-18',
-    location: 'freezer',
-    pricePerUnit: 8.99,
-    store: 'Whole Foods',
-  },
-  {
-    id: '6',
-    name: 'Black Beans',
-    category: 'pantry',
-    quantity: 6,
-    unit: 'cans',
-    purchaseDate: '2025-11-10',
-    location: 'pantry',
-    pricePerUnit: 0.99,
-    store: 'Walmart',
-  },
-  {
-    id: '7',
-    name: 'Leftover Chicken Bowl',
-    category: 'leftover',
-    quantity: 1,
-    unit: 'container',
-    expiryDate: '2025-11-24',
-    purchaseDate: '2025-11-21',
-    location: 'fridge',
-    isLeftover: true,
-    parentMealId: 'meal-123',
-  },
-];
-
 type FilterLocation = 'all' | 'fridge' | 'freezer' | 'pantry';
 type SortBy = 'name' | 'expiry' | 'category';
 
 export const InventoryScreen: React.FC = () => {
-  const [inventory, setInventory] = useState<InventoryItem[]>(sampleInventory);
-  const [refreshing, setRefreshing] = useState(false);
+  const navigation = useNavigation();
+  const dispatch = useDispatch<AppDispatch>();
+  const inventory = useSelector(selectInventoryItems);
+  const loading = useSelector(selectInventoryLoading);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterLocation, setFilterLocation] = useState<FilterLocation>('all');
   const [sortBy, setSortBy] = useState<SortBy>('expiry');
   const [batchMode, setBatchMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [showQuantityModal, setShowQuantityModal] = useState(false);
+  const [showManualEntryModal, setShowManualEntryModal] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemQuantity, setNewItemQuantity] = useState('1');
+  const [newItemLocation, setNewItemLocation] = useState<FilterLocation>('fridge');
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+  useEffect(() => {
+    dispatch(fetchInventory());
+  }, [dispatch]);
+
+  const onRefresh = async () => {
+    await dispatch(fetchInventory()).unwrap();
   };
 
   const getFilteredAndSortedInventory = () => {
@@ -167,9 +109,108 @@ export const InventoryScreen: React.FC = () => {
     if (batchMode) {
       toggleItemSelection(item.id);
     } else {
-      // Navigate to item detail
-      console.log('Open item detail:', item.id);
+      // Show item detail alert with options
+      Alert.alert(
+        item.name,
+        `Quantity: ${item.quantity} ${item.unit || 'units'}\nLocation: ${item.location}\n${item.expiryDate ? `Expires: ${new Date(item.expiryDate).toLocaleDateString()}` : ''}`,
+        [
+          { text: 'Edit', onPress: () => handleEditItem(item) },
+          { text: 'Delete', style: 'destructive', onPress: () => handleDeleteItem(item.id) },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
     }
+  };
+
+  const handleEditItem = (item: InventoryItem) => {
+    Alert.prompt(
+      'Update Quantity',
+      `Current: ${item.quantity}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Update',
+          onPress: (newQty) => {
+            if (newQty && !isNaN(Number(newQty))) {
+              dispatch(updateInventoryItem({ itemId: item.id, updates: { quantity: Number(newQty) } }));
+            }
+          },
+        },
+      ],
+      'plain-text',
+      String(item.quantity)
+    );
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    try {
+      await dispatch(deleteInventoryItem(itemId)).unwrap();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete item');
+    }
+  };
+
+  const handleViewExpiring = useCallback(() => {
+    // Filter to show only expiring items
+    setSortBy('expiry');
+    setFilterLocation('all');
+    setSearchQuery('');
+    // Set filter to expiring-only mode in future iteration
+    Alert.alert('Expiring Items', 'Items sorted by expiry date. Items expiring soon are shown first.');
+  }, []);
+
+  const handleBatchMove = useCallback(() => {
+    if (selectedItems.length === 0) return;
+    setShowMoveModal(true);
+  }, [selectedItems]);
+
+  const handleBatchQuantity = useCallback(() => {
+    if (selectedItems.length === 0) return;
+    setShowQuantityModal(true);
+  }, [selectedItems]);
+
+  const handleMoveItems = async (newLocation: FilterLocation) => {
+    if (newLocation === 'all') return;
+    try {
+      await Promise.all(
+        selectedItems.map(id =>
+          dispatch(updateInventoryItem({ itemId: id, updates: { location: newLocation as 'fridge' | 'freezer' | 'pantry' } })).unwrap()
+        )
+      );
+      setSelectedItems([]);
+      setShowMoveModal(false);
+      Alert.alert('Success', `Moved ${selectedItems.length} items to ${newLocation}`);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to move items');
+    }
+  };
+
+  const handleManualEntry = async () => {
+    if (!newItemName.trim()) {
+      Alert.alert('Error', 'Please enter an item name');
+      return;
+    }
+    try {
+      await dispatch(addInventoryItem({
+        name: newItemName.trim(),
+        quantity: Number(newItemQuantity) || 1,
+        unit: 'units',
+        category: 'pantry',
+        location: newItemLocation === 'all' ? 'pantry' : newItemLocation,
+        purchaseDate: new Date().toISOString().split('T')[0],
+      })).unwrap();
+      setNewItemName('');
+      setNewItemQuantity('1');
+      setShowManualEntryModal(false);
+      setShowAddModal(false);
+      Alert.alert('Success', 'Item added to inventory');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to add item');
+    }
+  };
+
+  const handleScanBarcode = () => {
+    Alert.alert('Scanner', 'Barcode scanning requires camera permissions. This feature will open the camera to scan product barcodes.', [{ text: 'OK' }]);
   };
 
   const getExpiringCount = () => {
@@ -238,7 +279,7 @@ export const InventoryScreen: React.FC = () => {
           </View>
           <Button
             title="View"
-            onPress={() => {}}
+            onPress={handleViewExpiring}
             variant="ghost"
             size="small"
           />
@@ -256,7 +297,7 @@ export const InventoryScreen: React.FC = () => {
         />
         <IconButton
           icon={'\u{1F4F7}'}
-          onPress={() => console.log('Open barcode scanner')}
+          onPress={handleScanBarcode}
           variant="secondary"
         />
       </View>
@@ -303,22 +344,26 @@ export const InventoryScreen: React.FC = () => {
           </Text>
           <Button
             title="Delete"
-            onPress={() => {
-              setInventory(prev => prev.filter(i => !selectedItems.includes(i.id)));
-              setSelectedItems([]);
+            onPress={async () => {
+              try {
+                await Promise.all(selectedItems.map(id => dispatch(deleteInventoryItem(id)).unwrap()));
+                setSelectedItems([]);
+              } catch (error) {
+                Alert.alert('Error', 'Failed to delete items');
+              }
             }}
             variant="outline"
             size="small"
           />
           <Button
             title="Move"
-            onPress={() => {}}
+            onPress={handleBatchMove}
             variant="outline"
             size="small"
           />
           <Button
             title="Update Qty"
-            onPress={() => {}}
+            onPress={handleBatchQuantity}
             variant="outline"
             size="small"
           />
@@ -326,38 +371,161 @@ export const InventoryScreen: React.FC = () => {
       )}
 
       {/* Inventory List */}
-      <FlatList
-        data={filteredInventory}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <InventoryItemComponent
-            item={item}
-            onPress={() => handleItemPress(item)}
-            onLongPress={() => {
-              if (!batchMode) {
-                setBatchMode(true);
-                setSelectedItems([item.id]);
-              }
-            }}
-            isSelected={selectedItems.includes(item.id)}
-          />
-        )}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>{'\u{1F4E6}'}</Text>
-            <Text style={styles.emptyTitle}>No items found</Text>
-            <Text style={styles.emptySubtitle}>
-              {searchQuery
-                ? 'Try a different search term'
-                : 'Add items to start tracking your inventory'}
-            </Text>
-          </View>
-        }
-      />
+      {loading && inventory.length === 0 ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary.main} />
+          <Text style={styles.loadingText}>Loading inventory...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredInventory}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <InventoryItemComponent
+              item={item}
+              onPress={() => handleItemPress(item)}
+              onLongPress={() => {
+                if (!batchMode) {
+                  setBatchMode(true);
+                  setSelectedItems([item.id]);
+                }
+              }}
+              isSelected={selectedItems.includes(item.id)}
+            />
+          )}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl refreshing={loading} onRefresh={onRefresh} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>{'\u{1F4E6}'}</Text>
+              <Text style={styles.emptyTitle}>No items found</Text>
+              <Text style={styles.emptySubtitle}>
+                {searchQuery
+                  ? 'Try a different search term'
+                  : 'Add items to start tracking your inventory'}
+              </Text>
+            </View>
+          }
+        />
+      )}
+
+      {/* Move Items Modal */}
+      <Modal visible={showMoveModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <Card variant="elevated" style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Move {selectedItems.length} Items To</Text>
+            {(['fridge', 'freezer', 'pantry'] as const).map((loc) => (
+              <Button
+                key={loc}
+                title={loc.charAt(0).toUpperCase() + loc.slice(1)}
+                onPress={() => handleMoveItems(loc)}
+                variant="outline"
+                fullWidth
+                style={styles.quickAddButton}
+              />
+            ))}
+            <Button
+              title="Cancel"
+              onPress={() => setShowMoveModal(false)}
+              variant="ghost"
+              fullWidth
+            />
+          </Card>
+        </View>
+      </Modal>
+
+      {/* Quantity Update Modal */}
+      <Modal visible={showQuantityModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <Card variant="elevated" style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Update Quantity</Text>
+            <Text style={styles.modalSubtitle}>{selectedItems.length} items selected</Text>
+            <View style={styles.quantityActions}>
+              <Button title="-1" onPress={() => {
+                Promise.all(selectedItems.map(id => {
+                  const item = inventory.find(i => i.id === id);
+                  if (item && item.quantity > 1) {
+                    return dispatch(updateInventoryItem({ itemId: id, updates: { quantity: item.quantity - 1 } })).unwrap();
+                  }
+                  return Promise.resolve();
+                })).then(() => setShowQuantityModal(false));
+              }} variant="outline" />
+              <Button title="+1" onPress={() => {
+                Promise.all(selectedItems.map(id => {
+                  const item = inventory.find(i => i.id === id);
+                  if (item) {
+                    return dispatch(updateInventoryItem({ itemId: id, updates: { quantity: item.quantity + 1 } })).unwrap();
+                  }
+                  return Promise.resolve();
+                })).then(() => setShowQuantityModal(false));
+              }} variant="outline" />
+              <Button title="Set to 0" onPress={() => {
+                Promise.all(selectedItems.map(id =>
+                  dispatch(updateInventoryItem({ itemId: id, updates: { quantity: 0 } })).unwrap()
+                )).then(() => {
+                  setShowQuantityModal(false);
+                  setSelectedItems([]);
+                });
+              }} variant="outline" />
+            </View>
+            <Button
+              title="Cancel"
+              onPress={() => setShowQuantityModal(false)}
+              variant="ghost"
+              fullWidth
+            />
+          </Card>
+        </View>
+      </Modal>
+
+      {/* Manual Entry Modal */}
+      <Modal visible={showManualEntryModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <Card variant="elevated" style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Item</Text>
+            <Input
+              label="Item Name"
+              placeholder="e.g., Chicken breast"
+              value={newItemName}
+              onChangeText={setNewItemName}
+            />
+            <Input
+              label="Quantity"
+              placeholder="1"
+              value={newItemQuantity}
+              onChangeText={setNewItemQuantity}
+              keyboardType="numeric"
+            />
+            <Text style={styles.locationLabel}>Location</Text>
+            <View style={styles.locationButtons}>
+              {(['fridge', 'freezer', 'pantry'] as const).map((loc) => (
+                <Button
+                  key={loc}
+                  title={loc.charAt(0).toUpperCase() + loc.slice(1)}
+                  onPress={() => setNewItemLocation(loc)}
+                  variant={newItemLocation === loc ? 'primary' : 'outline'}
+                  size="small"
+                  style={styles.locationButton}
+                />
+              ))}
+            </View>
+            <Button
+              title="Add Item"
+              onPress={handleManualEntry}
+              fullWidth
+              style={styles.quickAddButton}
+            />
+            <Button
+              title="Cancel"
+              onPress={() => setShowManualEntryModal(false)}
+              variant="ghost"
+              fullWidth
+            />
+          </Card>
+        </View>
+      </Modal>
 
       {/* Quick Add Modal */}
       <Modal
@@ -371,14 +539,20 @@ export const InventoryScreen: React.FC = () => {
             <View style={styles.quickAddOptions}>
               <Button
                 title="Scan Barcode"
-                onPress={() => {}}
+                onPress={() => {
+                  setShowAddModal(false);
+                  handleScanBarcode();
+                }}
                 icon={<Text style={styles.optionIcon}>{'\u{1F4F7}'}</Text>}
                 fullWidth
                 style={styles.quickAddButton}
               />
               <Button
                 title="Manual Entry"
-                onPress={() => {}}
+                onPress={() => {
+                  setShowAddModal(false);
+                  setShowManualEntryModal(true);
+                }}
                 variant="outline"
                 icon={<Text style={styles.optionIcon}>{'\u270D'}</Text>}
                 fullWidth
@@ -386,7 +560,11 @@ export const InventoryScreen: React.FC = () => {
               />
               <Button
                 title="From Shopping List"
-                onPress={() => {}}
+                onPress={() => {
+                  setShowAddModal(false);
+                  (navigation as any).navigate?.('Kitchen');
+                  Alert.alert('Shopping List', 'Navigate to Shopping tab to add purchased items to inventory');
+                }}
                 variant="outline"
                 icon={<Text style={styles.optionIcon}>{'\u{1F6D2}'}</Text>}
                 fullWidth
@@ -394,7 +572,11 @@ export const InventoryScreen: React.FC = () => {
               />
               <Button
                 title="Log Leftover"
-                onPress={() => {}}
+                onPress={() => {
+                  setShowAddModal(false);
+                  setNewItemName('Leftover ');
+                  setShowManualEntryModal(true);
+                }}
                 variant="outline"
                 icon={<Text style={styles.optionIcon}>{'\u{1F37D}'}</Text>}
                 fullWidth
@@ -506,6 +688,17 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     paddingBottom: spacing.xxl,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: spacing.xxl,
+  },
+  loadingText: {
+    ...typography.body2,
+    color: colors.text.secondary,
+    marginTop: spacing.md,
+  },
   emptyState: {
     alignItems: 'center',
     paddingVertical: spacing.xxl,
@@ -551,5 +744,30 @@ const styles = StyleSheet.create({
   optionIcon: {
     fontSize: 18,
     marginRight: spacing.sm,
+  },
+  modalSubtitle: {
+    ...typography.body2,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  quantityActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: spacing.lg,
+  },
+  locationLabel: {
+    ...typography.body2,
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  locationButtons: {
+    flexDirection: 'row',
+    marginBottom: spacing.md,
+    gap: spacing.xs,
+  },
+  locationButton: {
+    flex: 1,
   },
 });

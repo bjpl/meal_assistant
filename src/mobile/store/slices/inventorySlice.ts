@@ -262,4 +262,18 @@ export const {
   setError,
 } = inventorySlice.actions;
 
+// Selectors
+export const selectInventoryItems = (state: { inventory: InventoryState }) => state.inventory.items;
+export const selectInventoryLoading = (state: { inventory: InventoryState }) => state.inventory.loading;
+export const selectInventoryError = (state: { inventory: InventoryState }) => state.inventory.error;
+export const selectInventoryByLocation = (location: InventoryItem['location']) =>
+  (state: { inventory: InventoryState }) => state.inventory.items.filter(item => item.location === location);
+export const selectInventoryByCategory = (category: string) =>
+  (state: { inventory: InventoryState }) => state.inventory.items.filter(item => item.category === category);
+
+// Re-export async thunks with alternative names for compatibility
+export const addInventoryItem = addItemAsync;
+export const updateInventoryItem = updateItemAsync;
+export const deleteInventoryItem = deleteItemAsync;
+
 export default inventorySlice.reducer;

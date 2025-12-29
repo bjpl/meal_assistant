@@ -247,11 +247,9 @@ export type OnboardingStackParamList = {
 export type MainTabParamList = {
   Dashboard: undefined;
   Tracking: undefined;
-  Inventory: undefined;
-  PrepPlan: undefined;
-  Analytics: undefined;
-  Shopping: undefined;
-  Hydration: undefined;
+  Kitchen: undefined;
+  Stats: undefined;
+  More: undefined;
 };
 
 // ============================================

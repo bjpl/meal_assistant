@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector, useDispatch } from 'react-redux';
 import { Card } from '../components/base/Card';
 import { Button } from '../components/base/Button';
 import { Badge } from '../components/base/Badge';
@@ -14,58 +16,70 @@ import { ProgressBar } from '../components/base/ProgressBar';
 import { WeightChart } from '../components/analytics/WeightChart';
 import { AdherenceCalendar } from '../components/analytics/AdherenceCalendar';
 import { colors, spacing, typography } from '../utils/theme';
-import { WeightEntry, DailyStats, PatternStats, PatternId } from '../types';
-
-// Sample data
-const sampleWeightEntries: WeightEntry[] = [
-  { date: '2025-11-01', weight: 250 },
-  { date: '2025-11-04', weight: 249 },
-  { date: '2025-11-07', weight: 248.5 },
-  { date: '2025-11-10', weight: 247 },
-  { date: '2025-11-14', weight: 246.5 },
-  { date: '2025-11-17', weight: 245 },
-  { date: '2025-11-20', weight: 244.5 },
-  { date: '2025-11-22', weight: 244 },
-];
-
-const sampleDailyStats: DailyStats[] = [
-  { date: '2025-11-01', patternId: 'A', totalCalories: 1820, totalProtein: 138, mealsLogged: 3, adherenceScore: 95, averageSatisfaction: 4, averageEnergy: 75 },
-  { date: '2025-11-02', patternId: 'A', totalCalories: 1750, totalProtein: 142, mealsLogged: 3, adherenceScore: 88, averageSatisfaction: 4, averageEnergy: 70 },
-  { date: '2025-11-03', patternId: 'B', totalCalories: 1900, totalProtein: 135, mealsLogged: 3, adherenceScore: 72, averageSatisfaction: 3, averageEnergy: 65 },
-  { date: '2025-11-04', patternId: 'C', totalCalories: 1800, totalProtein: 140, mealsLogged: 2, adherenceScore: 90, averageSatisfaction: 4, averageEnergy: 80 },
-  { date: '2025-11-05', patternId: 'A', totalCalories: 1850, totalProtein: 136, mealsLogged: 3, adherenceScore: 85, averageSatisfaction: 4, averageEnergy: 72 },
-  { date: '2025-11-06', patternId: 'E', totalCalories: 1780, totalProtein: 138, mealsLogged: 5, adherenceScore: 78, averageSatisfaction: 3, averageEnergy: 68 },
-  { date: '2025-11-07', patternId: 'A', totalCalories: 1820, totalProtein: 141, mealsLogged: 3, adherenceScore: 92, averageSatisfaction: 5, averageEnergy: 85 },
-  { date: '2025-11-10', patternId: 'D', totalCalories: 1750, totalProtein: 155, mealsLogged: 3, adherenceScore: 94, averageSatisfaction: 4, averageEnergy: 78 },
-  { date: '2025-11-11', patternId: 'A', totalCalories: 1800, totalProtein: 138, mealsLogged: 3, adherenceScore: 88, averageSatisfaction: 4, averageEnergy: 75 },
-  { date: '2025-11-12', patternId: 'A', totalCalories: 1830, totalProtein: 140, mealsLogged: 3, adherenceScore: 91, averageSatisfaction: 4, averageEnergy: 77 },
-  { date: '2025-11-15', patternId: 'B', totalCalories: 1790, totalProtein: 142, mealsLogged: 3, adherenceScore: 82, averageSatisfaction: 4, averageEnergy: 72 },
-  { date: '2025-11-16', patternId: 'C', totalCalories: 1760, totalProtein: 138, mealsLogged: 2, adherenceScore: 88, averageSatisfaction: 4, averageEnergy: 79 },
-  { date: '2025-11-17', patternId: 'A', totalCalories: 1810, totalProtein: 139, mealsLogged: 3, adherenceScore: 93, averageSatisfaction: 5, averageEnergy: 82 },
-  { date: '2025-11-18', patternId: 'A', totalCalories: 1780, totalProtein: 141, mealsLogged: 3, adherenceScore: 90, averageSatisfaction: 4, averageEnergy: 76 },
-  { date: '2025-11-19', patternId: 'D', totalCalories: 1730, totalProtein: 158, mealsLogged: 3, adherenceScore: 96, averageSatisfaction: 5, averageEnergy: 85 },
-  { date: '2025-11-20', patternId: 'A', totalCalories: 1820, totalProtein: 137, mealsLogged: 3, adherenceScore: 89, averageSatisfaction: 4, averageEnergy: 74 },
-  { date: '2025-11-21', patternId: 'G', totalCalories: 1850, totalProtein: 135, mealsLogged: 3, adherenceScore: 75, averageSatisfaction: 3, averageEnergy: 70 },
-];
-
-const samplePatternStats: PatternStats[] = [
-  { patternId: 'A', timesUsed: 12, averageSatisfaction: 4.2, averageEnergy: 76, adherenceRate: 90, lastUsed: '2025-11-20' },
-  { patternId: 'B', timesUsed: 3, averageSatisfaction: 3.7, averageEnergy: 69, adherenceRate: 77, lastUsed: '2025-11-15' },
-  { patternId: 'C', timesUsed: 2, averageSatisfaction: 4.0, averageEnergy: 80, adherenceRate: 89, lastUsed: '2025-11-16' },
-  { patternId: 'D', timesUsed: 2, averageSatisfaction: 4.5, averageEnergy: 82, adherenceRate: 95, lastUsed: '2025-11-19' },
-  { patternId: 'E', timesUsed: 1, averageSatisfaction: 3.0, averageEnergy: 68, adherenceRate: 78, lastUsed: '2025-11-06' },
-  { patternId: 'G', timesUsed: 1, averageSatisfaction: 3.0, averageEnergy: 70, adherenceRate: 75, lastUsed: '2025-11-21' },
-];
+import { PatternId, DailyStats, PatternStats, WeightEntry } from '../types';
+import { RootState, AppDispatch } from '../store';
+import {
+  fetchPatternStats,
+  fetchWeightTrend,
+  fetchAdherenceStats,
+  selectWeightEntries,
+  selectTargetWeight,
+  selectPatternEffectiveness,
+  selectWeightTrend,
+  selectBestPattern,
+} from '../store/slices/analyticsSlice';
+import { selectDailyStats } from '../store/slices/mealsSlice';
 
 export const AnalyticsScreen: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+
+  // Redux selectors
+  const weightEntries = useSelector(selectWeightEntries);
+  const targetWeight = useSelector(selectTargetWeight) || 220;
+  const patternEffectiveness = useSelector(selectPatternEffectiveness);
+  const weightTrend = useSelector(selectWeightTrend);
+  const bestPattern = useSelector(selectBestPattern);
+  const dailyStats = useSelector((state: RootState) => state.analytics.dailyStats);
+  const loading = useSelector((state: RootState) => state.analytics.loading);
+
   const [refreshing, setRefreshing] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [timeframe, setTimeframe] = useState<'week' | 'month' | 'all'>('month');
 
-  const onRefresh = () => {
+  // Fetch data on mount
+  useEffect(() => {
+    dispatch(fetchPatternStats(30));
+    dispatch(fetchWeightTrend());
+    dispatch(fetchAdherenceStats(undefined));
+  }, [dispatch]);
+
+  const onRefresh = async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    await Promise.all([
+      dispatch(fetchPatternStats(30)),
+      dispatch(fetchWeightTrend()),
+      dispatch(fetchAdherenceStats(undefined)),
+    ]);
+    setRefreshing(false);
   };
+
+  // Convert pattern effectiveness to PatternStats format for display
+  const patternStats: PatternStats[] = patternEffectiveness.map(pe => ({
+    patternId: pe.patternId,
+    timesUsed: pe.totalDaysUsed,
+    averageSatisfaction: pe.satisfactionScore,
+    averageEnergy: pe.energyLevelAvg,
+    adherenceRate: Math.round(pe.adherenceRate),
+    lastUsed: new Date().toISOString().split('T')[0], // Fallback - not in type
+  }));
+
+  // Use sample data as fallback if no Redux data
+  const displayWeightEntries = weightEntries.length > 0 ? weightEntries : [
+    { date: new Date().toISOString().split('T')[0], weight: 250 },
+  ];
+
+  const displayDailyStats = dailyStats.length > 0 ? dailyStats : [];
+  const displayPatternStats = patternStats.length > 0 ? patternStats : [];
 
   const handleMonthChange = (direction: 'prev' | 'next') => {
     const newMonth = new Date(selectedMonth);
@@ -73,16 +87,20 @@ export const AnalyticsScreen: React.FC = () => {
     setSelectedMonth(newMonth);
   };
 
-  // Calculate summary stats
-  const avgCalories = Math.round(
-    sampleDailyStats.reduce((sum, s) => sum + s.totalCalories, 0) / sampleDailyStats.length
-  );
-  const avgProtein = Math.round(
-    sampleDailyStats.reduce((sum, s) => sum + s.totalProtein, 0) / sampleDailyStats.length
-  );
-  const overallAdherence = Math.round(
-    sampleDailyStats.reduce((sum, s) => sum + s.adherenceScore, 0) / sampleDailyStats.length
-  );
+  // Calculate summary stats from Redux data
+  const avgCalories = displayDailyStats.length > 0
+    ? Math.round(displayDailyStats.reduce((sum, s) => sum + s.totalCalories, 0) / displayDailyStats.length)
+    : 0;
+  const avgProtein = displayDailyStats.length > 0
+    ? Math.round(displayDailyStats.reduce((sum, s) => sum + s.totalProtein, 0) / displayDailyStats.length)
+    : 0;
+  const overallAdherence = displayDailyStats.length > 0
+    ? Math.round(displayDailyStats.reduce((sum, s) => sum + s.adherenceScore, 0) / displayDailyStats.length)
+    : 0;
+
+  // Calculate weight change from Redux data
+  const weightChange = weightTrend ? weightTrend.change.toFixed(1) : '0';
+  const startWeight = displayWeightEntries.length > 0 ? displayWeightEntries[displayWeightEntries.length - 1].weight : 250;
 
   const getPatternName = (id: PatternId): string => {
     const names: Record<PatternId, string> = {
@@ -96,6 +114,17 @@ export const AnalyticsScreen: React.FC = () => {
     };
     return names[id];
   };
+
+  if (loading && displayWeightEntries.length === 0) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary.main} />
+          <Text style={styles.loadingText}>Loading analytics...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -166,25 +195,29 @@ export const AnalyticsScreen: React.FC = () => {
 
           <Card variant="elevated" style={styles.summaryCard}>
             <Text style={styles.summaryIcon}>{'\u{2696}'}</Text>
-            <Text style={styles.summaryValue}>-6 lbs</Text>
+            <Text style={styles.summaryValue}>{weightChange} lbs</Text>
             <Text style={styles.summaryLabel}>Weight Change</Text>
-            <Badge text="On Track" variant="success" size="small" />
+            <Badge
+              text={parseFloat(weightChange) <= 0 ? 'On Track' : 'Gaining'}
+              variant={parseFloat(weightChange) <= 0 ? 'success' : 'warning'}
+              size="small"
+            />
           </Card>
         </ScrollView>
 
         {/* Weight Chart */}
         <View style={styles.section}>
           <WeightChart
-            entries={sampleWeightEntries}
-            targetWeight={220}
-            startWeight={250}
+            entries={displayWeightEntries}
+            targetWeight={targetWeight}
+            startWeight={startWeight}
           />
         </View>
 
         {/* Adherence Calendar */}
         <View style={styles.section}>
           <AdherenceCalendar
-            stats={sampleDailyStats}
+            stats={displayDailyStats}
             month={selectedMonth}
             onDayPress={(date) => console.log('Day pressed:', date)}
             onMonthChange={handleMonthChange}
@@ -199,7 +232,7 @@ export const AnalyticsScreen: React.FC = () => {
               Which patterns work best for you
             </Text>
 
-            {samplePatternStats
+            {displayPatternStats
               .sort((a, b) => b.adherenceRate - a.adherenceRate)
               .map((stat) => (
                 <View key={stat.patternId} style={styles.patternRow}>
@@ -239,8 +272,9 @@ export const AnalyticsScreen: React.FC = () => {
             <View style={styles.recommendation}>
               <Text style={styles.recommendationIcon}>{'\u{1F4A1}'}</Text>
               <Text style={styles.recommendationText}>
-                Pattern D (Protein Focus) shows your highest satisfaction and adherence.
-                Consider using it more often!
+                {bestPattern
+                  ? `Pattern ${bestPattern.patternId} (${getPatternName(bestPattern.patternId)}) shows your highest satisfaction and adherence. Consider using it more often!`
+                  : 'Log more meals to discover which patterns work best for you!'}
               </Text>
             </View>
           </Card>
@@ -290,24 +324,40 @@ export const AnalyticsScreen: React.FC = () => {
         <View style={styles.section}>
           <Card variant="filled" style={styles.insightsCard}>
             <Text style={styles.insightsTitle}>Insights</Text>
-            <View style={styles.insight}>
-              <Text style={styles.insightIcon}>{'\u{1F31F}'}</Text>
-              <Text style={styles.insightText}>
-                You have lost 6 lbs this month at a healthy rate of 1.5 lbs/week
-              </Text>
-            </View>
-            <View style={styles.insight}>
-              <Text style={styles.insightIcon}>{'\u{1F4C8}'}</Text>
-              <Text style={styles.insightText}>
-                Your protein intake is consistently above target, supporting muscle retention
-              </Text>
-            </View>
-            <View style={styles.insight}>
-              <Text style={styles.insightIcon}>{'\u{1F3AF}'}</Text>
-              <Text style={styles.insightText}>
-                Morning meals have the highest adherence rate (95%)
-              </Text>
-            </View>
+            {weightTrend && parseFloat(weightChange) !== 0 && (
+              <View style={styles.insight}>
+                <Text style={styles.insightIcon}>{'\u{1F31F}'}</Text>
+                <Text style={styles.insightText}>
+                  {parseFloat(weightChange) < 0
+                    ? `You have lost ${Math.abs(parseFloat(weightChange))} lbs this month`
+                    : `You have gained ${weightChange} lbs this month`}
+                </Text>
+              </View>
+            )}
+            {avgProtein >= 130 && (
+              <View style={styles.insight}>
+                <Text style={styles.insightIcon}>{'\u{1F4C8}'}</Text>
+                <Text style={styles.insightText}>
+                  Your protein intake is consistently above target, supporting muscle retention
+                </Text>
+              </View>
+            )}
+            {bestPattern && (
+              <View style={styles.insight}>
+                <Text style={styles.insightIcon}>{'\u{1F3AF}'}</Text>
+                <Text style={styles.insightText}>
+                  Pattern {bestPattern.patternId} ({getPatternName(bestPattern.patternId)}) has your highest success rate
+                </Text>
+              </View>
+            )}
+            {displayDailyStats.length === 0 && (
+              <View style={styles.insight}>
+                <Text style={styles.insightIcon}>{'\u{1F4A1}'}</Text>
+                <Text style={styles.insightText}>
+                  Start logging meals to see personalized insights about your nutrition patterns
+                </Text>
+              </View>
+            )}
           </Card>
         </View>
 
@@ -479,5 +529,15 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: spacing.xxl,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    ...typography.body1,
+    color: colors.text.secondary,
+    marginTop: spacing.md,
   },
 });

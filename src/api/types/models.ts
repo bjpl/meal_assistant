@@ -91,6 +91,9 @@ export interface Pattern {
     remainingCalories: number;
     remainingProtein: number;
   };
+  rating?: number;
+  ratingNotes?: string;
+  ratedAt?: string;
 }
 
 export interface InventoryItem {

@@ -5,11 +5,9 @@ import { Text, View, StyleSheet } from 'react-native';
 
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { TrackingScreen } from '../screens/TrackingScreen';
-import { InventoryScreen } from '../screens/InventoryScreen';
-import { PrepScreen } from '../screens/PrepScreen';
-import { AnalyticsScreen } from '../screens/AnalyticsScreen';
-import { ShoppingScreen } from '../screens/ShoppingScreen';
-import { HydrationScreen } from '../screens/HydrationScreen';
+import { KitchenScreen } from '../screens/KitchenScreen';
+import { StatsScreen } from '../screens/StatsScreen';
+import { MoreScreen } from '../screens/MoreScreen';
 import { colors, spacing, typography } from '../utils/theme';
 import { RootStackParamList, MainTabParamList } from '../types';
 
@@ -61,35 +59,17 @@ const MainTabs: React.FC = () => {
         }}
       />
       <Tab.Screen
-        name="Inventory"
-        component={InventoryScreen}
+        name="Kitchen"
+        component={KitchenScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} icon={'\u{1F4E6}'} label="Inventory" />
+            <TabIcon focused={focused} icon={'\u{1F373}'} label="Kitchen" />
           ),
         }}
       />
       <Tab.Screen
-        name="PrepPlan"
-        component={PrepScreen}
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} icon={'\u{1F373}'} label="Prep" />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Hydration"
-        component={HydrationScreen}
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} icon={'\u{1F4A7}'} label="Water" />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Analytics"
-        component={AnalyticsScreen}
+        name="Stats"
+        component={StatsScreen}
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon focused={focused} icon={'\u{1F4CA}'} label="Stats" />
@@ -97,11 +77,11 @@ const MainTabs: React.FC = () => {
         }}
       />
       <Tab.Screen
-        name="Shopping"
-        component={ShoppingScreen}
+        name="More"
+        component={MoreScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} icon={'\u{1F6D2}'} label="Shop" />
+            <TabIcon focused={focused} icon={'\u{2630}'} label="More" />
           ),
         }}
       />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,9 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector, useDispatch } from 'react-redux';
 import { Card } from '../components/base/Card';
 import { Button } from '../components/base/Button';
 import { Badge } from '../components/base/Badge';
@@ -14,106 +16,33 @@ import { PrepTimeline } from '../components/prep/PrepTimeline';
 import { EquipmentStatus } from '../components/prep/EquipmentStatus';
 import { colors, spacing, typography } from '../utils/theme';
 import { PrepTask, Equipment, PrepSession } from '../types';
-
-// Sample data
-const sampleEquipment: Equipment[] = [
-  { id: '1', name: 'Stovetop', status: 'available', icon: '\u{1F373}' },
-  { id: '2', name: 'Oven', status: 'in-use', icon: '\u{1F3ED}', currentTask: 'Roasting vegetables' },
-  { id: '3', name: 'Rice Cooker', status: 'in-use', icon: '\u{1F35A}', currentTask: 'Cooking rice' },
-  { id: '4', name: 'Cutting Board', status: 'available', icon: '\u{1F52A}' },
-  { id: '5', name: 'Blender', status: 'available', icon: '\u{1F964}' },
-  { id: '6', name: 'Instant Pot', status: 'dirty', icon: '\u{1F372}' },
-];
-
-const sampleTasks: PrepTask[] = [
-  {
-    id: '1',
-    title: 'Prep vegetables',
-    description: 'Wash and chop bell peppers, broccoli, and carrots for roasting',
-    duration: 15,
-    equipment: ['Cutting Board', 'Knife'],
-    ingredientIds: ['veg-1', 'veg-2', 'veg-3'],
-    dependencies: [],
-    status: 'completed',
-    order: 1,
-  },
-  {
-    id: '2',
-    title: 'Start rice cooker',
-    description: 'Rinse 2 cups basmati rice and add to rice cooker with 2.5 cups water',
-    duration: 5,
-    equipment: ['Rice Cooker'],
-    ingredientIds: ['rice-1'],
-    dependencies: [],
-    status: 'completed',
-    order: 2,
-    parallelGroup: 'A',
-  },
-  {
-    id: '3',
-    title: 'Roast vegetables',
-    description: 'Toss vegetables with olive oil, salt, and pepper. Roast at 425F for 25 minutes',
-    duration: 30,
-    equipment: ['Oven', 'Baking Sheet'],
-    ingredientIds: ['veg-1', 'veg-2', 'veg-3', 'oil-1'],
-    dependencies: ['1'],
-    status: 'in-progress',
-    order: 3,
-    parallelGroup: 'A',
-  },
-  {
-    id: '4',
-    title: 'Season chicken',
-    description: 'Pat dry chicken breasts, season with salt, pepper, garlic powder, and paprika',
-    duration: 10,
-    equipment: ['Cutting Board'],
-    ingredientIds: ['chicken-1'],
-    dependencies: [],
-    status: 'pending',
-    order: 4,
-  },
-  {
-    id: '5',
-    title: 'Grill chicken',
-    description: 'Grill chicken breasts 6-7 minutes per side until internal temp reaches 165F',
-    duration: 20,
-    equipment: ['Stovetop', 'Grill Pan'],
-    ingredientIds: ['chicken-1'],
-    dependencies: ['4'],
-    status: 'pending',
-    order: 5,
-  },
-  {
-    id: '6',
-    title: 'Prepare sauce',
-    description: 'Mix Greek yogurt, lemon juice, garlic, and herbs for dipping sauce',
-    duration: 5,
-    equipment: ['Mixing Bowl'],
-    ingredientIds: ['yogurt-1', 'lemon-1'],
-    dependencies: [],
-    status: 'pending',
-    order: 6,
-    parallelGroup: 'B',
-  },
-  {
-    id: '7',
-    title: 'Plate and portion',
-    description: 'Divide rice, vegetables, and chicken into 4 meal prep containers',
-    duration: 10,
-    equipment: ['Meal Prep Containers'],
-    ingredientIds: [],
-    dependencies: ['2', '3', '5'],
-    status: 'pending',
-    order: 7,
-  },
-];
+import { RootState, AppDispatch } from '../store';
+import {
+  fetchCurrentSession,
+  startSessionAsync,
+  endSessionAsync,
+  completeTask,
+  selectCurrentSession,
+  selectPrepLoading,
+} from '../store/slices/prepSlice';
 
 export const PrepScreen: React.FC = () => {
-  const [tasks, setTasks] = useState<PrepTask[]>(sampleTasks);
-  const [equipment, setEquipment] = useState<Equipment[]>(sampleEquipment);
-  const [isActive, setIsActive] = useState(true);
-  const [elapsedTime, setElapsedTime] = useState(25);
-  const [currentTaskId, setCurrentTaskId] = useState('3');
+  const navigation = useNavigation();
+  const dispatch = useDispatch<AppDispatch>();
+  const session = useSelector(selectCurrentSession);
+  const loading = useSelector(selectPrepLoading);
+
+  const tasks = session?.tasks || [];
+  const equipment = session?.equipmentUsed || [];
+  const [isActive, setIsActive] = useState(session?.status === 'in-progress');
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [currentTaskId, setCurrentTaskId] = useState(
+    tasks.find(t => t.status === 'in-progress')?.id || ''
+  );
+
+  useEffect(() => {
+    dispatch(fetchCurrentSession());
+  }, [dispatch]);
 
   const totalDuration = tasks.reduce((sum, t) => sum + t.duration, 0);
   const completedTasks = tasks.filter(t => t.status === 'completed').length;
@@ -129,36 +58,39 @@ export const PrepScreen: React.FC = () => {
     return () => clearInterval(interval);
   }, [isActive]);
 
-  const handleCompleteTask = (taskId: string) => {
-    setTasks(prev =>
-      prev.map(task =>
-        task.id === taskId ? { ...task, status: 'completed' } : task
-      )
-    );
+  const handleCompleteTask = async (taskId: string) => {
+    if (!session) return;
+    try {
+      await dispatch(completeTask({ sessionId: session.id, taskId })).unwrap();
 
-    // Find next pending task
-    const currentIndex = tasks.findIndex(t => t.id === taskId);
-    const nextTask = tasks.find((t, i) => i > currentIndex && t.status === 'pending');
-    if (nextTask) {
-      setCurrentTaskId(nextTask.id);
-      setTasks(prev =>
-        prev.map(task =>
-          task.id === nextTask.id ? { ...task, status: 'in-progress' } : task
-        )
-      );
+      // Find next pending task
+      const currentIndex = tasks.findIndex(t => t.id === taskId);
+      const nextTask = tasks.find((t, i) => i > currentIndex && t.status === 'pending');
+      if (nextTask) {
+        setCurrentTaskId(nextTask.id);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to complete task');
     }
   };
 
-  const handleStartSession = () => {
-    setIsActive(true);
-    const firstPending = tasks.find(t => t.status === 'pending');
-    if (firstPending) {
-      setCurrentTaskId(firstPending.id);
-      setTasks(prev =>
-        prev.map(task =>
-          task.id === firstPending.id ? { ...task, status: 'in-progress' } : task
-        )
-      );
+  const handleStartSession = async () => {
+    if (!session) return;
+    try {
+      await dispatch(startSessionAsync({
+        date: session.date,
+        patternId: session.patternId,
+        tasks: session.tasks,
+        totalDuration: session.totalDuration,
+        equipmentUsed: session.equipmentUsed,
+      })).unwrap();
+      setIsActive(true);
+      const firstPending = tasks.find(t => t.status === 'pending');
+      if (firstPending) {
+        setCurrentTaskId(firstPending.id);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to start session');
     }
   };
 
@@ -166,7 +98,45 @@ export const PrepScreen: React.FC = () => {
     setIsActive(false);
   };
 
+  const handleSkipTask = useCallback((taskId: string) => {
+    if (!session) return;
+    Alert.alert(
+      'Skip Task',
+      'Are you sure you want to skip this task? You can come back to it later.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Skip',
+          onPress: async () => {
+            // Find next pending task
+            const currentIndex = tasks.findIndex(t => t.id === taskId);
+            const nextTask = tasks.find((t, i) => i > currentIndex && t.status === 'pending');
+            if (nextTask) {
+              setCurrentTaskId(nextTask.id);
+            }
+          },
+        },
+      ]
+    );
+  }, [session, tasks]);
+
+  const handleViewPreparedMeals = useCallback(() => {
+    // Navigate to inventory or show prepared meals
+    Alert.alert(
+      'Prepared Meals',
+      'Your prepped meals are stored in the Kitchen inventory. Would you like to view them?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'View Kitchen',
+          onPress: () => (navigation as any).navigate?.('Kitchen'),
+        },
+      ]
+    );
+  }, [navigation]);
+
   const handleEndSession = () => {
+    if (!session) return;
     Alert.alert(
       'End Prep Session',
       'Are you sure you want to end this prep session? Any incomplete tasks will be marked as pending.',
@@ -175,13 +145,13 @@ export const PrepScreen: React.FC = () => {
         {
           text: 'End Session',
           style: 'destructive',
-          onPress: () => {
-            setIsActive(false);
-            setTasks(prev =>
-              prev.map(task =>
-                task.status === 'in-progress' ? { ...task, status: 'pending' } : task
-              )
-            );
+          onPress: async () => {
+            try {
+              await dispatch(endSessionAsync(session.id)).unwrap();
+              setIsActive(false);
+            } catch (error) {
+              Alert.alert('Error', 'Failed to end session');
+            }
           },
         },
       ]
@@ -238,7 +208,7 @@ export const PrepScreen: React.FC = () => {
               />
               <Button
                 title="Skip"
-                onPress={() => {}}
+                onPress={() => handleSkipTask(currentTask.id)}
                 variant="outline"
                 style={{ marginLeft: spacing.sm }}
               />
@@ -327,7 +297,7 @@ export const PrepScreen: React.FC = () => {
             </Text>
             <Button
               title="View Prepared Meals"
-              onPress={() => {}}
+              onPress={handleViewPreparedMeals}
               style={{ marginTop: spacing.md }}
             />
           </Card>

@@ -313,4 +313,16 @@ export const {
   setError,
 } = shoppingSlice.actions;
 
+// Selectors
+export const selectCurrentList = (state: { shopping: ShoppingState }) => state.shopping.currentList;
+export const selectShoppingLoading = (state: { shopping: ShoppingState }) => state.shopping.loading;
+export const selectShoppingError = (state: { shopping: ShoppingState }) => state.shopping.error;
+export const selectPastLists = (state: { shopping: ShoppingState }) => state.shopping.pastLists;
+export const selectFavoriteStores = (state: { shopping: ShoppingState }) => state.shopping.favoriteStores;
+export const selectPriceHistory = (state: { shopping: ShoppingState }) => state.shopping.priceHistory;
+
+// Alias exports for compatibility
+export const toggleItemCheck = toggleItemChecked;
+export const updateListStatus = setListStatus;
+
 export default shoppingSlice.reducer;

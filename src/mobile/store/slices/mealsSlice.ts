@@ -97,8 +97,8 @@ export const logMealNaturalLanguage = createAsyncThunk(
       console.warn('[NL Logging] Server unavailable, using local parsing');
       const localParsed = vectorSearchService.parseNLMealLocal(request.description);
 
-      // Create a meal log from the local parsing
-      const mealLog: Partial<MealLog> = {
+      // Create a meal log from the local parsing (NL format differs from standard MealLog)
+      const mealLog = {
         id: `local_${Date.now()}`,
         description: request.description,
         mealType: (localParsed.mealType || request.mealType || 'snack') as MealLog['mealType'],
@@ -117,7 +117,7 @@ export const logMealNaturalLanguage = createAsyncThunk(
 
       // Also try to log via regular API
       try {
-        const apiResponse = await mealsApi.logMeal(mealLog as Omit<MealLog, 'id'>);
+        const apiResponse = await mealsApi.logMeal(mealLog as unknown as Omit<MealLog, 'id'>);
         if (!apiResponse.error && apiResponse.data) {
           return {
             mealLog: apiResponse.data as NLMealLogResponse['mealLog'],
@@ -130,7 +130,7 @@ export const logMealNaturalLanguage = createAsyncThunk(
       }
 
       return {
-        mealLog: mealLog as NLMealLogResponse['mealLog'],
+        mealLog: mealLog as unknown as NLMealLogResponse['mealLog'],
         confidence: 0.5, // Lower confidence for local parsing
         suggestions: ['Consider adding more details for better tracking']
       } as NLMealLogResponse;
@@ -334,5 +334,52 @@ export const {
   setError,
   clearMealLogs,
 } = mealsSlice.actions;
+
+// Selectors
+export const selectMealLogs = (state: { meals: MealsState }) => state.meals.mealLogs;
+export const selectMealsLoading = (state: { meals: MealsState }) => state.meals.loading;
+export const selectDailyStats = (state: { meals: MealsState }) => state.meals.dailyStats;
+export const selectWeightEntries = (state: { meals: MealsState }) => state.meals.weightEntries;
+
+// Daily progress selector - calculates calories and protein consumed today
+export const selectDailyProgress = (state: { meals: MealsState }) => {
+  const today = new Date().toISOString().split('T')[0];
+  const todaysMeals = state.meals.mealLogs.filter(meal => {
+    const mealDate = new Date(meal.createdAt || '').toISOString().split('T')[0];
+    return mealDate === today;
+  });
+
+  const consumed = todaysMeals.reduce((acc, meal) => {
+    const mealCalories = meal.components?.reduce((sum: number, comp) => sum + (comp.calories || 0), 0) || 0;
+    const mealProtein = meal.components?.reduce((sum: number, comp) => sum + (comp.protein || 0), 0) || 0;
+    return {
+      calories: acc.calories + mealCalories,
+      protein: acc.protein + mealProtein,
+    };
+  }, { calories: 0, protein: 0 });
+
+  return {
+    calories: { consumed: consumed.calories, target: 1800 },
+    protein: { consumed: consumed.protein, target: 135 },
+    meals: { logged: todaysMeals.length, total: 3 },
+  };
+};
+
+// Select available components for tracking - returns empty array as placeholder
+// In production, this would come from patterns or a separate meals config
+export const selectAvailableComponents = (state: { meals: MealsState }) => {
+  // Default meal components for tracking
+  return [
+    { id: 'protein-1', name: 'Chicken Breast', category: 'protein' as const, calories: 165, protein: 31, portion: '4oz' },
+    { id: 'protein-2', name: 'Salmon', category: 'protein' as const, calories: 208, protein: 20, portion: '4oz' },
+    { id: 'carb-1', name: 'Brown Rice', category: 'carb' as const, calories: 216, protein: 5, portion: '1 cup' },
+    { id: 'carb-2', name: 'Sweet Potato', category: 'carb' as const, calories: 103, protein: 2, portion: '1 medium' },
+    { id: 'veg-1', name: 'Broccoli', category: 'vegetable' as const, calories: 55, protein: 4, portion: '1 cup' },
+    { id: 'veg-2', name: 'Mixed Greens', category: 'vegetable' as const, calories: 10, protein: 1, portion: '2 cups' },
+  ];
+};
+
+// Re-export async thunk with alternative name for compatibility
+export const logMeal = logMealAsync;
 
 export default mealsSlice.reducer;

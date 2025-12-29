@@ -239,6 +239,89 @@ router.delete('/:id', async (req: Request, res: Response) => {
   res.json({ message: 'Item deleted' });
 });
 
+/**
+ * @route GET /api/inventory/barcode/:barcode
+ * @desc Lookup item by barcode
+ * @access Private
+ */
+router.get('/barcode/:barcode', async (req: Request, res: Response) => {
+  const { barcode } = req.params;
+
+  if (!barcode || barcode.length < 8) {
+    throw new ApiError(400, 'Valid barcode is required (minimum 8 digits)');
+  }
+
+  // First check user's inventory for existing items with this barcode
+  const existingItems = await inventoryService.findByUser(req.user!.id, {});
+  const userItem = existingItems.find(item => item.barcode === barcode);
+
+  if (userItem) {
+    res.json({
+      found: true,
+      source: 'user_inventory',
+      item: {
+        name: userItem.name,
+        category: userItem.category,
+        subcategory: userItem.subcategory,
+        barcode: userItem.barcode,
+        lastPurchasePrice: userItem.purchasePrice,
+        lastPurchaseDate: userItem.purchaseDate
+      }
+    });
+    return;
+  }
+
+  // Mock product database lookup (would use real barcode API in production)
+  const productDatabase: Record<string, any> = {
+    '012345678901': {
+      name: 'Organic Whole Milk',
+      category: 'dairy',
+      subcategory: 'milk',
+      brand: 'Organic Valley',
+      typicalPrice: 5.99,
+      unit: 'gallon'
+    },
+    '012345678902': {
+      name: 'Cage-Free Large Eggs',
+      category: 'protein',
+      subcategory: 'eggs',
+      brand: 'Happy Egg Co',
+      typicalPrice: 4.99,
+      unit: 'dozen'
+    }
+  };
+
+  const product = productDatabase[barcode];
+
+  if (product) {
+    res.json({
+      found: true,
+      source: 'product_database',
+      item: {
+        name: product.name,
+        category: product.category,
+        subcategory: product.subcategory,
+        brand: product.brand,
+        barcode,
+        estimatedPrice: product.typicalPrice,
+        unit: product.unit,
+        suggestion: 'Add to inventory with current details'
+      }
+    });
+  } else {
+    res.json({
+      found: false,
+      barcode,
+      message: 'Product not found in database. Please enter details manually.',
+      suggestion: {
+        category: 'other',
+        unit: 'count',
+        quantity: 1
+      }
+    });
+  }
+});
+
 // Helper functions
 function groupBy(items: any[], key: string): Record<string, number> {
   return items.reduce((acc, item) => {

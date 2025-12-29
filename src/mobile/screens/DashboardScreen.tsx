@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useSelector, useDispatch } from 'react-redux';
 import { Card } from '../components/base/Card';
 import { Button } from '../components/base/Button';
 import { Badge } from '../components/base/Badge';
@@ -23,71 +26,56 @@ import { colors, spacing, typography } from '../utils/theme';
 import { MealPattern, PatternId } from '../types';
 import { createSwitchPreview } from '../utils/patternSwitch';
 import { PatternSwitchPreviewData } from '../store/slices/patternsSlice';
+import { RootState, AppDispatch } from '../store';
+import { fetchPatterns } from '../store/slices/patternsSlice';
+import { selectDailyProgress } from '../store/slices/mealsSlice';
 
-// Sample data - in production this would come from Redux store
-const samplePatterns: MealPattern[] = [
-  {
-    id: 'A',
-    name: 'Traditional',
-    description: 'Regular schedule with consistent energy throughout the day. Ideal for office work.',
-    optimalFor: ['Regular schedule', 'Consistent energy', 'Office work'],
-    meals: {
-      morning: { time: '7-8 AM', calories: 400, protein: 35, components: [] },
-      noon: { time: '12-1 PM', calories: 850, protein: 60, components: [] },
-      evening: { time: '6-7 PM', calories: 550, protein: 40, components: [] },
-    },
-    totalCalories: 1800,
-    totalProtein: 135,
-  },
-  {
-    id: 'B',
-    name: 'Reversed',
-    description: 'Light dinner preference with larger midday meal. Great for social lunches.',
-    optimalFor: ['Light dinner', 'Business lunches', 'Social midday meals'],
-    meals: {
-      morning: { time: '7-8 AM', calories: 400, protein: 35, components: [] },
-      noon: { time: '12-1 PM', calories: 550, protein: 55, components: [] },
-      evening: { time: '6-7 PM', calories: 850, protein: 50, components: [] },
-    },
-    totalCalories: 1800,
-    totalProtein: 140,
-  },
-  {
-    id: 'C',
-    name: 'Intermittent Fasting',
-    description: '16:8 fasting window. Skip breakfast, eat within 8-hour window.',
-    optimalFor: ['Fat burning', 'Mental clarity', 'Simplified planning'],
-    meals: {
-      morning: { time: 'Skip', calories: 0, protein: 0, components: [] },
-      noon: { time: '12-1 PM', calories: 900, protein: 70, components: [] },
-      evening: { time: '6-7 PM', calories: 900, protein: 65, components: [] },
-    },
-    totalCalories: 1800,
-    totalProtein: 135,
-  },
-];
+type MainTabParamList = {
+  Dashboard: undefined;
+  Tracking: undefined;
+  Kitchen: undefined;
+  Stats: undefined;
+  More: undefined;
+};
 
 export const DashboardScreen: React.FC = () => {
+  // Navigation hook
+  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+
+  // Redux hooks
+  const dispatch = useDispatch<AppDispatch>();
+  const patterns = useSelector((state: RootState) => state.patterns.patterns);
+  const currentPatternId = useSelector((state: RootState) => state.patterns.selectedPattern);
+  const loading = useSelector((state: RootState) => state.patterns.loading);
+  const dailyProgress = useSelector((state: RootState) => selectDailyProgress(state)) || {
+    calories: { consumed: 0, target: 1800 },
+    protein: { consumed: 0, target: 135 },
+    meals: { logged: 0, total: 3 },
+  };
+
+  // Local state
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedPattern, setSelectedPattern] = useState<PatternId>('A');
+  const [selectedPattern, setSelectedPattern] = useState<PatternId | null>(null);
   const [showDecisionTree, setShowDecisionTree] = useState(false);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [showSwitchPreview, setShowSwitchPreview] = useState(false);
   const [switchPreviewData, setSwitchPreviewData] = useState<PatternSwitchPreviewData | null>(null);
 
-  const todayPattern = samplePatterns.find(p => p.id === selectedPattern);
+  // Load patterns on mount
+  useEffect(() => {
+    dispatch(fetchPatterns());
+  }, [dispatch]);
 
-  const onRefresh = () => {
+  // Determine the active pattern (selected or current from Redux)
+  const activePatternId = selectedPattern || currentPatternId;
+  const todayPattern = patterns.find(p => p.id === activePatternId);
+
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
-    // Simulate refresh
-    setTimeout(() => setRefreshing(false), 1000);
-  };
-
-  const dailyProgress = {
-    calories: { consumed: 1250, target: 1800 },
-    protein: { consumed: 95, target: 135 },
-    meals: { logged: 2, total: 3 },
-  };
+    dispatch(fetchPatterns()).finally(() => {
+      setRefreshing(false);
+    });
+  }, [dispatch]);
 
   // Pattern switch handlers
   const handleOpenSwitchModal = useCallback(() => {
@@ -173,7 +161,7 @@ export const DashboardScreen: React.FC = () => {
             />
             <IconButton
               icon={'\u2699'}
-              onPress={() => {}}
+              onPress={() => navigation.navigate('More')}
               variant="ghost"
             />
           </View>
@@ -184,8 +172,8 @@ export const DashboardScreen: React.FC = () => {
           <View style={styles.summaryHeader}>
             <Text style={styles.summaryTitle}>Today's Progress</Text>
             <Badge
-              text={`Pattern ${selectedPattern}`}
-              customColor={colors.patterns[selectedPattern]}
+              text={`Pattern ${activePatternId || 'A'}`}
+              customColor={colors.patterns[activePatternId || 'A']}
             />
           </View>
 
@@ -233,7 +221,7 @@ export const DashboardScreen: React.FC = () => {
         <View style={styles.quickActions}>
           <Button
             title="Log Meal"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('Tracking')}
             icon={<Text style={styles.buttonIcon}>{'\u{1F4F7}'}</Text>}
             style={styles.actionButton}
           />
@@ -299,20 +287,20 @@ export const DashboardScreen: React.FC = () => {
             <Text style={styles.sectionTitle}>Quick Pattern Switch</Text>
             <Button
               title="View All"
-              onPress={() => {}}
+              onPress={handleOpenSwitchModal}
               variant="ghost"
               size="small"
             />
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {samplePatterns.map((pattern) => (
+            {patterns.map((pattern) => (
               <Card
                 key={pattern.id}
                 onPress={() => setSelectedPattern(pattern.id)}
                 accentColor={colors.patterns[pattern.id]}
                 style={StyleSheet.flatten([
                   styles.miniPatternCard,
-                  selectedPattern === pattern.id && styles.miniPatternCardSelected,
+                  activePatternId === pattern.id && styles.miniPatternCardSelected,
                 ])}
               >
                 <Text
@@ -385,7 +373,7 @@ export const DashboardScreen: React.FC = () => {
           <PatternSwitchModal
             visible={showSwitchModal}
             currentPattern={todayPattern}
-            patterns={samplePatterns}
+            patterns={patterns}
             caloriesConsumed={dailyProgress.calories.consumed}
             proteinConsumed={dailyProgress.protein.consumed}
             onSelectPattern={handleSelectPatternForSwitch}

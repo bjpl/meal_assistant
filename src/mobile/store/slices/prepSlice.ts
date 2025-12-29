@@ -276,4 +276,16 @@ export const {
   setError,
 } = prepSlice.actions;
 
+// Selectors
+export const selectCurrentSession = (state: { prep: PrepState }) => state.prep.currentSession;
+export const selectPrepLoading = (state: { prep: PrepState }) => state.prep.loading;
+export const selectPrepError = (state: { prep: PrepState }) => state.prep.error;
+export const selectPastSessions = (state: { prep: PrepState }) => state.prep.pastSessions;
+export const selectEquipment = (state: { prep: PrepState }) => state.prep.equipment;
+export const selectTemplates = (state: { prep: PrepState }) => state.prep.templates;
+
+// Convenience thunk for completing a task - wrapper around updateTaskStatus
+export const completeTask = (payload: { sessionId: string; taskId: string }) =>
+  updateTaskStatusAsync({ ...payload, status: 'completed' });
+
 export default prepSlice.reducer;

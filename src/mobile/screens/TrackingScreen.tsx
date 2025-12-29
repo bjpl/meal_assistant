@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,12 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector, useDispatch } from 'react-redux';
 import { Card } from '../components/base/Card';
 import { Button } from '../components/base/Button';
 import { Input } from '../components/base/Input';
@@ -18,17 +22,15 @@ import { Badge } from '../components/base/Badge';
 import { PhotoCapture } from '../components/tracking/PhotoCapture';
 import { NutritionSummary } from '../components/tracking/NutritionSummary';
 import { colors, spacing, typography, borderRadius } from '../utils/theme';
-import { MealComponent, PatternId } from '../types';
-
-// Sample components data
-const sampleComponents: MealComponent[] = [
-  { id: '1', name: 'Chicken Breast', category: 'protein', calories: 280, protein: 52, portion: '6 oz' },
-  { id: '2', name: 'Basmati Rice', category: 'carb', calories: 210, protein: 4, portion: '1 cup' },
-  { id: '3', name: 'Roasted Vegetables', category: 'vegetable', calories: 185, protein: 4, portion: '1.5 cups' },
-  { id: '4', name: 'Olive Oil', category: 'fat', calories: 120, protein: 0, portion: '1 tbsp' },
-];
+import { MealComponent, PatternId, ConsumedComponent } from '../types';
+import { RootState, AppDispatch } from '../store';
+import { logMeal, selectAvailableComponents } from '../store/slices/mealsSlice';
 
 export const TrackingScreen: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const mealComponents = useSelector(selectAvailableComponents);
+  const loading = useSelector((state: RootState) => state.meals.loading);
+
   const [showCamera, setShowCamera] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [satisfaction, setSatisfaction] = useState(0);
@@ -38,8 +40,52 @@ export const TrackingScreen: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [selectedMeal, setSelectedMeal] = useState<'morning' | 'noon' | 'evening'>('noon');
   const [selectedComponents, setSelectedComponents] = useState<string[]>(
-    sampleComponents.map(c => c.id)
+    mealComponents.map((c: MealComponent) => c.id)
   );
+  const [showSwapModal, setShowSwapModal] = useState(false);
+  const [swapComponentId, setSwapComponentId] = useState<string | null>(null);
+
+  // Substitutes for swap functionality
+  const substitutes: Record<string, { id: string; name: string; calories: number; protein: number }[]> = {
+    'protein-1': [
+      { id: 'sub-1', name: 'Turkey Breast', calories: 135, protein: 30 },
+      { id: 'sub-2', name: 'Tofu', calories: 144, protein: 15 },
+    ],
+    'protein-2': [
+      { id: 'sub-3', name: 'Tuna', calories: 132, protein: 29 },
+      { id: 'sub-4', name: 'Shrimp', calories: 99, protein: 20 },
+    ],
+    'carb-1': [
+      { id: 'sub-5', name: 'Quinoa', calories: 222, protein: 8 },
+      { id: 'sub-6', name: 'White Rice', calories: 205, protein: 4 },
+    ],
+    'carb-2': [
+      { id: 'sub-7', name: 'Regular Potato', calories: 161, protein: 4 },
+      { id: 'sub-8', name: 'Butternut Squash', calories: 82, protein: 2 },
+    ],
+    'veg-1': [
+      { id: 'sub-9', name: 'Cauliflower', calories: 27, protein: 2 },
+      { id: 'sub-10', name: 'Green Beans', calories: 31, protein: 2 },
+    ],
+    'veg-2': [
+      { id: 'sub-11', name: 'Spinach', calories: 23, protein: 3 },
+      { id: 'sub-12', name: 'Kale', calories: 33, protein: 3 },
+    ],
+  };
+
+  const handleSwapComponent = useCallback((componentId: string) => {
+    setSwapComponentId(componentId);
+    setShowSwapModal(true);
+  }, []);
+
+  const handleSelectSubstitute = useCallback((substituteId: string, substituteName: string) => {
+    if (swapComponentId) {
+      // In production, this would update the meal component
+      Alert.alert('Swapped', `Replaced with ${substituteName}`);
+      setShowSwapModal(false);
+      setSwapComponentId(null);
+    }
+  }, [swapComponentId]);
 
   const handlePhotoTaken = (uri: string) => {
     setPhotoUri(uri);
@@ -55,28 +101,59 @@ export const TrackingScreen: React.FC = () => {
   };
 
   const calculateTotals = () => {
-    const selected = sampleComponents.filter(c => selectedComponents.includes(c.id));
+    const selected = mealComponents.filter((c: MealComponent) => selectedComponents.includes(c.id));
     return {
-      calories: selected.reduce((sum, c) => sum + c.calories, 0),
-      protein: selected.reduce((sum, c) => sum + c.protein, 0),
+      calories: selected.reduce((sum: number, c: MealComponent) => sum + c.calories, 0),
+      protein: selected.reduce((sum: number, c: MealComponent) => sum + c.protein, 0),
     };
   };
 
   const totals = calculateTotals();
 
-  const handleSave = () => {
-    // In production, this would dispatch to Redux store
-    console.log('Saving meal log:', {
-      photoUri,
-      satisfaction,
+  const handleSave = async () => {
+    const now = new Date().toISOString();
+    const today = now.split('T')[0];
+
+    // Convert MealComponents to ConsumedComponents
+    const consumedComponents: ConsumedComponent[] = selectedComponents
+      .map(id => mealComponents.find(c => c.id === id))
+      .filter(c => c !== undefined)
+      .map(c => ({
+        componentId: c!.id,
+        name: c!.name,
+        portion: 1,
+        calories: c!.calories,
+        protein: c!.protein,
+      }));
+
+    const mealData = {
+      date: today,
+      patternId: 'A' as PatternId, // Default pattern
+      mealType: selectedMeal,
+      components: consumedComponents,
+      satisfaction: satisfaction as 1 | 2 | 3 | 4 | 5,
       energyLevel,
       hungerBefore,
       hungerAfter,
       notes,
-      selectedMeal,
-      selectedComponents,
-      totals,
-    });
+      photoUri: photoUri || undefined,
+      createdAt: now,
+    };
+
+    try {
+      await dispatch(logMeal(mealData)).unwrap();
+      Alert.alert('Success', 'Meal logged successfully!');
+      // Reset form
+      setSatisfaction(0);
+      setEnergyLevel(50);
+      setHungerBefore(70);
+      setHungerAfter(20);
+      setNotes('');
+      setPhotoUri(null);
+      setSelectedComponents(mealComponents.map((c: MealComponent) => c.id));
+    } catch (error) {
+      Alert.alert('Error', 'Failed to log meal. Please try again.');
+    }
   };
 
   return (
@@ -85,12 +162,18 @@ export const TrackingScreen: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
       >
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Log Meal</Text>
-            <Text style={styles.subtitle}>Track your nutrition and how you feel</Text>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary.main} />
+            <Text style={styles.loadingText}>Loading meal data...</Text>
           </View>
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.title}>Log Meal</Text>
+              <Text style={styles.subtitle}>Track your nutrition and how you feel</Text>
+            </View>
 
           {/* Meal Type Selection */}
           <View style={styles.mealSelector}>
@@ -152,65 +235,71 @@ export const TrackingScreen: React.FC = () => {
             <Text style={styles.sectionSubtitle}>
               Toggle components you ate (tap to substitute)
             </Text>
-            {sampleComponents.map((component) => {
-              const isSelected = selectedComponents.includes(component.id);
-              return (
-                <View
-                  key={component.id}
-                  style={[
-                    styles.componentRow,
-                    !isSelected && styles.componentRowDisabled,
-                  ]}
-                >
-                  <Button
-                    title=""
-                    onPress={() => toggleComponent(component.id)}
-                    variant={isSelected ? 'primary' : 'outline'}
-                    size="small"
-                    style={styles.componentToggle}
-                    icon={
-                      <Text style={{ color: isSelected ? colors.text.inverse : colors.primary.main }}>
-                        {isSelected ? '\u2713' : ''}
+            {mealComponents.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No meal components available</Text>
+              </View>
+            ) : (
+              mealComponents.map((component) => {
+                const isSelected = selectedComponents.includes(component.id);
+                return (
+                  <View
+                    key={component.id}
+                    style={[
+                      styles.componentRow,
+                      !isSelected && styles.componentRowDisabled,
+                    ]}
+                  >
+                    <Button
+                      title=""
+                      onPress={() => toggleComponent(component.id)}
+                      variant={isSelected ? 'primary' : 'outline'}
+                      size="small"
+                      style={styles.componentToggle}
+                      icon={
+                        <Text style={{ color: isSelected ? colors.text.inverse : colors.primary.main }}>
+                          {isSelected ? '\u2713' : ''}
+                        </Text>
+                      }
+                    />
+                    <View style={styles.componentInfo}>
+                      <View style={styles.componentHeader}>
+                        <Text
+                          style={[
+                            styles.componentName,
+                            !isSelected && styles.componentNameDisabled,
+                          ]}
+                        >
+                          {component.name}
+                        </Text>
+                        <Badge
+                          text={component.category}
+                          size="small"
+                          customColor={
+                            component.category === 'protein'
+                              ? colors.secondary.main
+                              : component.category === 'carb'
+                              ? colors.info
+                              : component.category === 'vegetable'
+                              ? colors.success
+                              : colors.warning
+                          }
+                        />
+                      </View>
+                      <Text style={styles.componentDetails}>
+                        {component.portion} - {component.calories} cal, {component.protein}g protein
                       </Text>
-                    }
-                  />
-                  <View style={styles.componentInfo}>
-                    <View style={styles.componentHeader}>
-                      <Text
-                        style={[
-                          styles.componentName,
-                          !isSelected && styles.componentNameDisabled,
-                        ]}
-                      >
-                        {component.name}
-                      </Text>
-                      <Badge
-                        text={component.category}
-                        size="small"
-                        customColor={
-                          component.category === 'protein'
-                            ? colors.secondary.main
-                            : component.category === 'carb'
-                            ? colors.info
-                            : component.category === 'vegetable'
-                            ? colors.success
-                            : colors.warning
-                        }
-                      />
                     </View>
-                    <Text style={styles.componentDetails}>
-                      {component.portion} - {component.calories} cal, {component.protein}g protein
-                    </Text>
+                    <Button
+                      title="Swap"
+                      onPress={() => handleSwapComponent(component.id)}
+                      variant="ghost"
+                      size="small"
+                    />
                   </View>
-                  <Button
-                    title="Swap"
-                    onPress={() => {}}
-                    variant="ghost"
-                    size="small"
-                  />
-                </View>
-              );
-            })}
+                );
+              })
+            )}
           </Card>
 
           {/* Satisfaction Rating */}
@@ -280,6 +369,7 @@ export const TrackingScreen: React.FC = () => {
 
           <View style={styles.bottomSpacer} />
         </ScrollView>
+        )}
       </KeyboardAvoidingView>
 
       {/* Camera Modal */}
@@ -288,6 +378,42 @@ export const TrackingScreen: React.FC = () => {
         onPhotoTaken={handlePhotoTaken}
         onCancel={() => setShowCamera(false)}
       />
+
+      {/* Swap Component Modal */}
+      <Modal visible={showSwapModal} animationType="slide" transparent>
+        <View style={styles.swapModalOverlay}>
+          <View style={styles.swapModalContent}>
+            <Text style={styles.swapModalTitle}>Swap Component</Text>
+            <Text style={styles.swapModalSubtitle}>Choose a substitute:</Text>
+            {swapComponentId && substitutes[swapComponentId]?.map((sub) => (
+              <View key={sub.id} style={styles.swapOption}>
+                <View style={styles.swapOptionInfo}>
+                  <Text style={styles.swapOptionName}>{sub.name}</Text>
+                  <Text style={styles.swapOptionDetails}>
+                    {sub.calories} cal, {sub.protein}g protein
+                  </Text>
+                </View>
+                <Button
+                  title="Select"
+                  onPress={() => handleSelectSubstitute(sub.id, sub.name)}
+                  variant="outline"
+                  size="small"
+                />
+              </View>
+            ))}
+            <Button
+              title="Cancel"
+              onPress={() => {
+                setShowSwapModal(false);
+                setSwapComponentId(null);
+              }}
+              variant="ghost"
+              fullWidth
+              style={{ marginTop: spacing.md }}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -437,5 +563,68 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: spacing.xxl,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  loadingText: {
+    ...typography.body1,
+    color: colors.text.secondary,
+    marginTop: spacing.md,
+  },
+  emptyState: {
+    padding: spacing.lg,
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    ...typography.body1,
+    color: colors.text.secondary,
+  },
+  swapModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  swapModalContent: {
+    backgroundColor: colors.background.primary,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+  },
+  swapModalTitle: {
+    ...typography.h3,
+    color: colors.text.primary,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
+  swapModalSubtitle: {
+    ...typography.body2,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  swapOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  swapOptionInfo: {
+    flex: 1,
+  },
+  swapOptionName: {
+    ...typography.body1,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  swapOptionDetails: {
+    ...typography.caption,
+    color: colors.text.secondary,
   },
 });

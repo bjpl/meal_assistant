@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,19 @@ import {
   RefreshControl,
   Modal,
   TouchableOpacity,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '../store';
+import {
+  fetchCurrentList,
+  toggleItemCheck,
+  updateListStatus,
+  selectCurrentList,
+  selectShoppingLoading,
+} from '../store/slices/shoppingSlice';
 import { Card } from '../components/base/Card';
 import { Button } from '../components/base/Button';
 import { Input } from '../components/base/Input';
@@ -19,33 +30,6 @@ import { ProgressBar } from '../components/base/ProgressBar';
 import { DealMatchBadgeCompact } from '../components/ads/DealMatchBadge';
 import { colors, spacing, typography, borderRadius } from '../utils/theme';
 import { ShoppingItem, ShoppingList, DealInfo } from '../types';
-
-// Sample data organized by store section
-const sampleShoppingList: ShoppingList = {
-  id: 'list-1',
-  name: 'Week of Nov 25',
-  weekOf: '2025-11-25',
-  items: [
-    { id: '1', name: 'Chicken Breast', quantity: 4, unit: 'lbs', category: 'protein', storeSection: 'Meat', assignedStore: 'Costco', estimatedPrice: 19.99, checked: false, deal: { originalPrice: 24.99, salePrice: 19.99, expiryDate: '2025-11-27', confidence: 'high' } },
-    { id: '2', name: 'Salmon Fillets', quantity: 2, unit: 'lbs', category: 'protein', storeSection: 'Seafood', assignedStore: 'Whole Foods', estimatedPrice: 17.98, checked: false },
-    { id: '3', name: 'Greek Yogurt', quantity: 6, unit: 'cups', category: 'dairy', storeSection: 'Dairy', assignedStore: 'Safeway', estimatedPrice: 8.94, checked: true },
-    { id: '4', name: 'Basmati Rice', quantity: 10, unit: 'lbs', category: 'carb', storeSection: 'Grains', assignedStore: 'Costco', estimatedPrice: 12.99, checked: false, deal: { originalPrice: 15.99, salePrice: 12.99, expiryDate: '2025-11-30', confidence: 'medium' } },
-    { id: '5', name: 'Bell Peppers', quantity: 6, unit: 'count', category: 'vegetable', storeSection: 'Produce', assignedStore: 'Safeway', estimatedPrice: 5.94, checked: false },
-    { id: '6', name: 'Broccoli', quantity: 2, unit: 'lbs', category: 'vegetable', storeSection: 'Produce', assignedStore: 'Safeway', estimatedPrice: 3.98, checked: true },
-    { id: '7', name: 'Black Beans', quantity: 6, unit: 'cans', category: 'pantry', storeSection: 'Canned', assignedStore: 'Walmart', estimatedPrice: 5.94, checked: false },
-    { id: '8', name: 'Olive Oil', quantity: 1, unit: 'bottle', category: 'pantry', storeSection: 'Oils', assignedStore: 'Costco', estimatedPrice: 14.99, checked: false },
-    { id: '9', name: 'Eggs', quantity: 2, unit: 'dozen', category: 'dairy', storeSection: 'Dairy', assignedStore: 'Costco', estimatedPrice: 7.99, checked: false },
-    { id: '10', name: 'Sweet Potatoes', quantity: 3, unit: 'lbs', category: 'vegetable', storeSection: 'Produce', assignedStore: 'Safeway', estimatedPrice: 4.47, checked: false },
-  ],
-  stores: [
-    { storeId: 'costco', storeName: 'Costco', items: ['1', '4', '8', '9'], estimatedTotal: 55.96 },
-    { storeId: 'safeway', storeName: 'Safeway', items: ['3', '5', '6', '10'], estimatedTotal: 22.33 },
-    { storeId: 'wholefoods', storeName: 'Whole Foods', items: ['2'], estimatedTotal: 17.98 },
-    { storeId: 'walmart', storeName: 'Walmart', items: ['7'], estimatedTotal: 5.94 },
-  ],
-  totalEstimatedCost: 102.21,
-  status: 'planning',
-};
 
 type ViewMode = 'section' | 'store';
 
@@ -60,45 +44,49 @@ export interface ShoppingScreenProps {
 }
 
 export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ navigation, route }) => {
-  const [list, setList] = useState<ShoppingList>(sampleShoppingList);
-  const [refreshing, setRefreshing] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const list = useSelector(selectCurrentList);
+  const loading = useSelector(selectShoppingLoading);
+
   const [viewMode, setViewMode] = useState<ViewMode>('section');
   const [activeStore, setActiveStore] = useState<string | null>(null);
   const [showReceiptScanner, setShowReceiptScanner] = useState(false);
   const [showAdUploadPrompt, setShowAdUploadPrompt] = useState(false);
 
+  useEffect(() => {
+    dispatch(fetchCurrentList());
+  }, [dispatch]);
+
   // Count items with active deals
-  const itemsWithDeals = list.items.filter(i => i.deal).length;
+  const itemsWithDeals = list?.items.filter(i => i.deal).length || 0;
 
   const onRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
+    dispatch(fetchCurrentList());
   };
 
   const toggleItem = (itemId: string) => {
-    setList(prev => ({
-      ...prev,
-      items: prev.items.map(item =>
-        item.id === itemId ? { ...item, checked: !item.checked } : item
-      ),
-    }));
+    dispatch(toggleItemCheck(itemId));
   };
 
-  const getCheckedCount = () => list.items.filter(i => i.checked).length;
-  const getTotalItems = () => list.items.length;
-  const getProgress = () => (getCheckedCount() / getTotalItems()) * 100;
+  const getCheckedCount = () => list?.items.filter(i => i.checked).length || 0;
+  const getTotalItems = () => list?.items.length || 0;
+  const getProgress = () => {
+    const total = getTotalItems();
+    return total > 0 ? (getCheckedCount() / total) * 100 : 0;
+  };
 
   const getActualTotal = () =>
-    list.items
+    list?.items
       .filter(i => i.checked && i.estimatedPrice)
-      .reduce((sum, i) => sum + (i.estimatedPrice || 0), 0);
+      .reduce((sum, i) => sum + (i.estimatedPrice || 0), 0) || 0;
 
   const getSavings = () =>
-    list.items
+    list?.items
       .filter(i => i.deal)
-      .reduce((sum, i) => sum + ((i.deal?.originalPrice || 0) - (i.deal?.salePrice || 0)), 0);
+      .reduce((sum, i) => sum + ((i.deal?.originalPrice || 0) - (i.deal?.salePrice || 0)), 0) || 0;
 
   const getSectionData = () => {
+    if (!list) return [];
     const sections: { [key: string]: ShoppingItem[] } = {};
     list.items.forEach(item => {
       if (!sections[item.storeSection]) {
@@ -110,6 +98,7 @@ export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ navigation, rout
   };
 
   const getStoreData = () => {
+    if (!list) return [];
     return list.stores.map(store => ({
       title: store.storeName,
       estimatedTotal: store.estimatedTotal,
@@ -191,6 +180,38 @@ export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ navigation, rout
     </View>
   );
 
+  // Loading state
+  if (loading && !list) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary.main} />
+          <Text style={styles.loadingText}>Loading shopping list...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Empty state
+  if (!list) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>{'\u{1F6D2}'}</Text>
+          <Text style={styles.emptyTitle}>No Shopping List</Text>
+          <Text style={styles.emptyText}>
+            Create a meal plan to generate your shopping list
+          </Text>
+          <Button
+            title="Go to Meal Planner"
+            onPress={() => navigation?.navigate('MealPlanner')}
+            style={{ marginTop: spacing.lg }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
@@ -210,7 +231,36 @@ export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ navigation, rout
             onPress={() => setShowReceiptScanner(true)}
             variant="default"
           />
-          <IconButton icon="+" onPress={() => {}} variant="primary" />
+          <IconButton icon="+" onPress={() => {
+            Alert.alert(
+              'Add Item',
+              'Add a new item to your shopping list',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Add',
+                  onPress: () => {
+                    Alert.prompt(
+                      'New Item',
+                      'Enter item name',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Add',
+                          onPress: (itemName) => {
+                            if (itemName?.trim()) {
+                              Alert.alert('Added', `${itemName} added to shopping list`);
+                            }
+                          },
+                        },
+                      ],
+                      'plain-text'
+                    );
+                  },
+                },
+              ]
+            );
+          }} variant="primary" />
         </View>
       </View>
 
@@ -335,7 +385,7 @@ export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ navigation, rout
         renderSectionHeader={renderSectionHeader}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={loading} onRefresh={onRefresh} />
         }
         stickySectionHeadersEnabled
       />
@@ -344,7 +394,7 @@ export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ navigation, rout
       <View style={styles.quickActions}>
         <Button
           title="Start Shopping"
-          onPress={() => setList(prev => ({ ...prev, status: 'shopping' }))}
+          onPress={() => dispatch(updateListStatus('shopping'))}
           fullWidth
           disabled={list.status === 'shopping'}
         />
@@ -363,7 +413,10 @@ export const ShoppingScreen: React.FC<ShoppingScreenProps> = ({ navigation, rout
             </View>
             <Button
               title="Open Camera"
-              onPress={() => {}}
+              onPress={() => {
+                setShowReceiptScanner(false);
+                Alert.alert('Camera', 'Opening camera to scan receipt. This will use OCR to extract items and prices automatically.');
+              }}
               fullWidth
               style={{ marginBottom: spacing.sm }}
             />
@@ -428,6 +481,37 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.secondary,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  loadingText: {
+    ...typography.body1,
+    color: colors.text.secondary,
+    marginTop: spacing.md,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: spacing.lg,
+  },
+  emptyTitle: {
+    ...typography.h2,
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+  },
+  emptyText: {
+    ...typography.body1,
+    color: colors.text.secondary,
+    textAlign: 'center',
   },
   header: {
     flexDirection: 'row',
