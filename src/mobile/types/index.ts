@@ -233,6 +233,10 @@ export type RootStackParamList = {
   PrepSession: { sessionId: string };
   ShoppingTrip: { listId: string; storeId: string };
   Camera: { mode: 'meal' | 'barcode' | 'receipt' };
+  Settings: undefined;
+  SocialEvent: undefined;
+  PriceHistory: undefined;
+  StoreOptimizer: undefined;
 };
 
 export type OnboardingStackParamList = {

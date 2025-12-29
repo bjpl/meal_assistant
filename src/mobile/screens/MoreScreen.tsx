@@ -7,11 +7,16 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Card } from '../components/base/Card';
 import { colors, spacing, typography, borderRadius } from '../utils/theme';
+import { RootStackParamList } from '../types';
+
+type MoreScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface MoreScreenProps {
-  navigation?: any;
+  navigation?: MoreScreenNavigationProp;
 }
 
 interface MenuItem {
@@ -23,7 +28,8 @@ interface MenuItem {
   action?: () => void;
 }
 
-export const MoreScreen: React.FC<MoreScreenProps> = ({ navigation }) => {
+export const MoreScreen: React.FC<MoreScreenProps> = () => {
+  const navigation = useNavigation<MoreScreenNavigationProp>();
   const menuItems: MenuItem[] = [
     {
       id: 'settings',
@@ -56,8 +62,21 @@ export const MoreScreen: React.FC<MoreScreenProps> = ({ navigation }) => {
   ];
 
   const handleItemPress = (item: MenuItem) => {
-    if (item.screen && navigation) {
-      navigation.navigate(item.screen);
+    if (item.screen) {
+      switch (item.screen) {
+        case 'Settings':
+          navigation.navigate('Settings');
+          break;
+        case 'SocialEvent':
+          navigation.navigate('SocialEvent');
+          break;
+        case 'PriceHistory':
+          navigation.navigate('PriceHistory');
+          break;
+        case 'StoreOptimizer':
+          navigation.navigate('StoreOptimizer');
+          break;
+      }
     } else if (item.action) {
       item.action();
     }

@@ -28,9 +28,6 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "experiments": {
-      "baseUrl": "/meal_assistant"
-    },
     "jsEngine": "hermes",
     "newArchEnabled": false,
     "scheme": "mealassistant"

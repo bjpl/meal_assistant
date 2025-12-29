@@ -8,6 +8,10 @@ import { TrackingScreen } from '../screens/TrackingScreen';
 import { KitchenScreen } from '../screens/KitchenScreen';
 import { StatsScreen } from '../screens/StatsScreen';
 import { MoreScreen } from '../screens/MoreScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
+import { SocialEventScreen } from '../screens/SocialEventScreen';
+import { PriceHistoryScreen } from '../screens/PriceHistoryScreen';
+import { StoreOptimizerScreen } from '../screens/StoreOptimizerScreen';
 import { colors, spacing, typography } from '../utils/theme';
 import { RootStackParamList, MainTabParamList } from '../types';
 
@@ -93,24 +97,26 @@ export const AppNavigator: React.FC = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainTabs} />
-      {/* Add modal screens here */}
-      {/*
       <Stack.Screen
-        name="MealDetail"
-        component={MealDetailScreen}
-        options={{ presentation: 'modal' }}
+        name="Settings"
+        component={SettingsScreen}
+        options={{ presentation: 'card' }}
       />
       <Stack.Screen
-        name="PatternDetail"
-        component={PatternDetailScreen}
-        options={{ presentation: 'modal' }}
+        name="SocialEvent"
+        component={SocialEventScreen}
+        options={{ presentation: 'card' }}
       />
       <Stack.Screen
-        name="Camera"
-        component={CameraScreen}
-        options={{ presentation: 'fullScreenModal' }}
+        name="PriceHistory"
+        component={PriceHistoryScreen}
+        options={{ presentation: 'card' }}
       />
-      */}
+      <Stack.Screen
+        name="StoreOptimizer"
+        component={StoreOptimizerScreen}
+        options={{ presentation: 'card' }}
+      />
     </Stack.Navigator>
   );
 };
