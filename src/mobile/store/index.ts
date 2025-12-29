@@ -23,13 +23,15 @@ import hydrationReducer from './slices/hydrationSlice';
 import analyticsReducer from './slices/analyticsSlice';
 import eventsReducer from './slices/eventsSlice';
 import onboardingReducer from './slices/onboardingSlice';
+import priceReducer from './slices/priceSlice';
+import optimizationReducer from './slices/optimizationSlice';
 
 // Persist configuration
 const persistConfig = {
   key: 'meal-assistant-root',
   version: 1,
   storage: AsyncStorage,
-  whitelist: ['patterns', 'meals', 'inventory', 'shopping', 'user', 'hydration', 'analytics', 'events', 'onboarding'], // Persist these reducers
+  whitelist: ['patterns', 'meals', 'inventory', 'shopping', 'user', 'hydration', 'analytics', 'events', 'onboarding', 'price', 'optimization'], // Persist these reducers
   blacklist: ['sync'], // Don't persist sync state
 };
 
@@ -46,6 +48,8 @@ const rootReducer = combineReducers({
   analytics: analyticsReducer,
   events: eventsReducer,
   onboarding: onboardingReducer,
+  price: priceReducer,
+  optimization: optimizationReducer,
 });
 
 // Create persisted reducer

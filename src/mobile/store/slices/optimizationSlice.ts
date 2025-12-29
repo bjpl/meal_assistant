@@ -13,6 +13,9 @@ import {
   StoreItemScore,
 } from '../../types/optimization.types';
 
+// API base URL from environment
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://meal-api-production-8e80.up.railway.app';
+
 // ============================================
 // Initial State
 // ============================================
@@ -221,7 +224,154 @@ const calculateSavings = (
 };
 
 // ============================================
-// Async Thunks
+// Async Thunks - API Integration
+// ============================================
+
+/**
+ * Fetch nearby stores based on user location
+ */
+export const fetchNearbyStores = createAsyncThunk(
+  'optimization/fetchStores',
+  async (
+    payload: { lat: number; lng: number; radius?: number; storeType?: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const params = new URLSearchParams({
+        lat: payload.lat.toString(),
+        lng: payload.lng.toString(),
+        radius: (payload.radius || 10).toString(),
+        ...(payload.storeType && { storeType: payload.storeType }),
+      });
+
+      const response = await fetch(`${API_URL}/api/optimization/stores?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch nearby stores');
+      }
+      const data = await response.json();
+      return data.stores;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+/**
+ * Calculate optimized shopping distribution across stores
+ */
+export const calculateOptimization = createAsyncThunk(
+  'optimization/calculate',
+  async (
+    payload: {
+      shoppingListId: string;
+      items: any[];
+      stores: Store[];
+      weights: OptimizationWeights;
+      userLocation?: { lat: number; lng: number };
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await fetch(`${API_URL}/api/optimization/calculate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to calculate optimization');
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+/**
+ * Get optimized route between stores from API
+ */
+export const fetchOptimizedRoute = createAsyncThunk(
+  'optimization/fetchRoute',
+  async (
+    payload: {
+      stores: Store[];
+      startLocation: { lat: number; lng: number };
+      options?: { optimize?: 'distance' | 'time' };
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await fetch(`${API_URL}/api/optimization/route`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to calculate route');
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+/**
+ * Estimate savings from multi-store shopping
+ */
+export const estimateSavings = createAsyncThunk(
+  'optimization/estimateSavings',
+  async (
+    payload: {
+      items: any[];
+      stores: Store[];
+      weights?: OptimizationWeights;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await fetch(`${API_URL}/api/optimization/estimate-savings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to estimate savings');
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+/**
+ * Fetch available weight presets from API
+ */
+export const fetchPresets = createAsyncThunk(
+  'optimization/fetchPresets',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch(`${API_URL}/api/optimization/presets`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch presets');
+      }
+      return await response.json();
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// ============================================
+// Local Calculation Thunks
 // ============================================
 export const recalculateOptimization = createAsyncThunk(
   'optimization/recalculate',
@@ -486,6 +636,109 @@ const optimizationSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
+    // Fetch nearby stores
+    builder
+      .addCase(fetchNearbyStores.pending, (state) => {
+        state.isCalculating = true;
+        state.error = null;
+      })
+      .addCase(fetchNearbyStores.fulfilled, (state, action) => {
+        state.stores = action.payload.map((store: any) => ({
+          id: store.id,
+          name: store.name,
+          address: `${store.distance.toFixed(1)} mi away`,
+          distance: store.distance,
+          rating: store.rating,
+          openHours: '9AM - 9PM',
+          estimatedTime: Math.round(store.distance * 5 + 15),
+          priceLevel: store.storeType === 'discount' ? 1 : store.storeType === 'warehouse' ? 2 : 3,
+          sections: ['produce', 'meat', 'dairy', 'frozen', 'pantry'],
+          coordinates: { latitude: store.latitude, longitude: store.longitude },
+        }));
+        state.isCalculating = false;
+      })
+      .addCase(fetchNearbyStores.rejected, (state, action) => {
+        state.isCalculating = false;
+        state.error = action.payload as string;
+      });
+
+    // Calculate optimization
+    builder
+      .addCase(calculateOptimization.pending, (state) => {
+        state.isCalculating = true;
+        state.error = null;
+      })
+      .addCase(calculateOptimization.fulfilled, (state, action) => {
+        const { optimization } = action.payload;
+        if (optimization) {
+          state.storeAssignments = optimization.storeDistribution?.reduce(
+            (acc: Record<string, string[]>, dist: any) => {
+              acc[dist.storeId] = dist.items?.map((i: any) => i.id) || [];
+              return acc;
+            },
+            {}
+          ) || {};
+          state.savings = {
+            total: optimization.summary?.totalSavings || 0,
+            vsAveragePrice: optimization.summary?.totalSavings || 0,
+            perStore: {},
+          };
+          state.lastCalculated = new Date().toISOString();
+        }
+        state.isCalculating = false;
+      })
+      .addCase(calculateOptimization.rejected, (state, action) => {
+        state.isCalculating = false;
+        state.error = action.payload as string;
+      });
+
+    // Fetch optimized route
+    builder
+      .addCase(fetchOptimizedRoute.pending, (state) => {
+        state.isCalculating = true;
+      })
+      .addCase(fetchOptimizedRoute.fulfilled, (state, action) => {
+        const { route } = action.payload;
+        if (route) {
+          state.route = {
+            stops: route.route?.map((step: any) => ({
+              storeId: step.store,
+              storeName: step.store,
+              order: step.step,
+              estimatedArrival: new Date(Date.now() + step.duration * 60000).toISOString(),
+              estimatedDuration: step.duration,
+              itemCount: 0,
+              estimatedSpend: 0,
+              coordinates: { latitude: 0, longitude: 0 },
+            })) || [],
+            totalDistance: route.totalDistance,
+            totalDuration: route.totalTime,
+            totalSpend: 0,
+            savings: 0,
+            startLocation: route.startLocation,
+          };
+        }
+        state.isCalculating = false;
+      })
+      .addCase(fetchOptimizedRoute.rejected, (state, action) => {
+        state.isCalculating = false;
+        state.error = action.payload as string;
+      });
+
+    // Estimate savings
+    builder
+      .addCase(estimateSavings.fulfilled, (state, action) => {
+        const { comparison } = action.payload;
+        if (comparison?.savings) {
+          state.savings = {
+            total: comparison.savings.amount,
+            vsAveragePrice: comparison.savings.amount,
+            perStore: {},
+          };
+        }
+      });
+
+    // Local recalculation
     builder
       .addCase(recalculateOptimization.pending, (state) => {
         state.isCalculating = true;
@@ -520,6 +773,46 @@ const optimizationSlice = createSlice({
       });
   },
 });
+
+// ============================================
+// Selectors
+// ============================================
+
+export const selectOptimizationWeights = (state: { optimization: OptimizationState }) =>
+  state.optimization?.weights;
+
+export const selectActivePreset = (state: { optimization: OptimizationState }) =>
+  state.optimization?.activePreset;
+
+export const selectIsCustomWeights = (state: { optimization: OptimizationState }) =>
+  state.optimization?.isCustomWeights;
+
+export const selectStores = (state: { optimization: OptimizationState }) =>
+  state.optimization?.stores || [];
+
+export const selectItems = (state: { optimization: OptimizationState }) =>
+  state.optimization?.items || [];
+
+export const selectStoreAssignments = (state: { optimization: OptimizationState }) =>
+  state.optimization?.storeAssignments || {};
+
+export const selectRoute = (state: { optimization: OptimizationState }) =>
+  state.optimization?.route;
+
+export const selectSavings = (state: { optimization: OptimizationState }) =>
+  state.optimization?.savings;
+
+export const selectIsCalculating = (state: { optimization: OptimizationState }) =>
+  state.optimization?.isCalculating || false;
+
+export const selectLastCalculated = (state: { optimization: OptimizationState }) =>
+  state.optimization?.lastCalculated;
+
+export const selectOptimizationError = (state: { optimization: OptimizationState }) =>
+  state.optimization?.error;
+
+export const selectHasData = (state: { optimization: OptimizationState }) =>
+  (state.optimization?.stores?.length || 0) > 0 || (state.optimization?.items?.length || 0) > 0;
 
 export const {
   setWeights,
