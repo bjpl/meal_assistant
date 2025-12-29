@@ -39,11 +39,25 @@ export const MoreScreen: React.FC<MoreScreenProps> = () => {
       screen: 'Settings',
     },
     {
+      id: 'hydration',
+      title: 'Hydration Tracker',
+      description: 'Track water intake and caffeine levels',
+      icon: '\u{1F4A7}',
+      screen: 'Hydration',
+    },
+    {
       id: 'social-events',
       title: 'Social Events',
       description: 'Plan ahead for special occasions',
       icon: '\u{1F389}',
       screen: 'SocialEvent',
+    },
+    {
+      id: 'pattern-analytics',
+      title: 'Pattern Analytics',
+      description: 'Deep insights into your eating patterns',
+      icon: '\u{1F4C8}',
+      screen: 'PatternAnalytics',
     },
     {
       id: 'price-history',
@@ -67,8 +81,14 @@ export const MoreScreen: React.FC<MoreScreenProps> = () => {
         case 'Settings':
           navigation.navigate('Settings');
           break;
+        case 'Hydration':
+          navigation.navigate('Hydration');
+          break;
         case 'SocialEvent':
           navigation.navigate('SocialEvent');
+          break;
+        case 'PatternAnalytics':
+          navigation.navigate('PatternAnalytics');
           break;
         case 'PriceHistory':
           navigation.navigate('PriceHistory');

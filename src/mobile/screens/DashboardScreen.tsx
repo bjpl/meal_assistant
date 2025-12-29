@@ -9,8 +9,10 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types';
 import { useSelector, useDispatch } from 'react-redux';
 import { Card } from '../components/base/Card';
 import { Button } from '../components/base/Button';
@@ -38,9 +40,15 @@ type MainTabParamList = {
   More: undefined;
 };
 
+// Combined navigation type for both tab and stack navigation
+type DashboardNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<MainTabParamList>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
+
 export const DashboardScreen: React.FC = () => {
-  // Navigation hook
-  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+  // Navigation hook with composite type for both tab and stack navigation
+  const navigation = useNavigation<DashboardNavigationProp>();
 
   // Redux hooks
   const dispatch = useDispatch<AppDispatch>();
@@ -161,7 +169,7 @@ export const DashboardScreen: React.FC = () => {
             />
             <IconButton
               icon={'\u2699'}
-              onPress={() => navigation.navigate('More')}
+              onPress={() => navigation.navigate('Settings')}
               variant="ghost"
             />
           </View>

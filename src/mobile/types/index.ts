@@ -224,16 +224,29 @@ export interface UserPreferences {
 // Navigation Types
 // ============================================
 export type RootStackParamList = {
+  // Core navigation
   MainTabs: undefined;
   Onboarding: undefined;
+
+  // Meal & Pattern screens
   MealDetail: { mealLogId: string };
   PatternDetail: { patternId: PatternId };
   PatternSwitchPreview: { newPatternId: PatternId };
+  PatternAnalytics: undefined;
+
+  // Kitchen-related screens (also accessible as stack screens)
   InventoryItem: { itemId?: string };
   PrepSession: { sessionId: string };
   ShoppingTrip: { listId: string; storeId: string };
+  StoreShoppingMode: { storeId: string; listId: string };
+
+  // Utility screens
   Camera: { mode: 'meal' | 'barcode' | 'receipt' };
   Settings: undefined;
+  Hydration: undefined;
+  Analytics: undefined;
+
+  // Feature screens (More menu)
   SocialEvent: undefined;
   PriceHistory: undefined;
   StoreOptimizer: undefined;

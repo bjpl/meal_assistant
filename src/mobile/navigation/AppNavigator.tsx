@@ -12,6 +12,9 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 import { SocialEventScreen } from '../screens/SocialEventScreen';
 import { PriceHistoryScreen } from '../screens/PriceHistoryScreen';
 import { StoreOptimizerScreen } from '../screens/StoreOptimizerScreen';
+import { HydrationScreen } from '../screens/HydrationScreen';
+import { AnalyticsScreen } from '../screens/AnalyticsScreen';
+import { PatternAnalyticsScreen } from '../screens/PatternAnalyticsScreen';
 import { colors, spacing, typography } from '../utils/theme';
 import { RootStackParamList, MainTabParamList } from '../types';
 
@@ -93,29 +96,90 @@ const MainTabs: React.FC = () => {
   );
 };
 
+// Common header style for stack screens
+const stackScreenOptions = {
+  headerShown: true,
+  headerStyle: {
+    backgroundColor: colors.background.primary,
+  },
+  headerTintColor: colors.primary.main,
+  headerTitleStyle: {
+    ...typography.h3,
+    color: colors.text.primary,
+  },
+  headerShadowVisible: false,
+  headerBackTitleVisible: false,
+};
+
 export const AppNavigator: React.FC = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainTabs} />
+      {/* Settings & Utility Screens */}
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ presentation: 'card' }}
+        options={{
+          ...stackScreenOptions,
+          title: 'Settings',
+          presentation: 'card',
+        }}
       />
+      <Stack.Screen
+        name="Hydration"
+        component={HydrationScreen}
+        options={{
+          ...stackScreenOptions,
+          title: 'Hydration',
+          presentation: 'card',
+        }}
+      />
+      {/* Analytics & Stats Screens */}
+      <Stack.Screen
+        name="Analytics"
+        component={AnalyticsScreen}
+        options={{
+          ...stackScreenOptions,
+          title: 'Analytics',
+          presentation: 'card',
+        }}
+      />
+      <Stack.Screen
+        name="PatternAnalytics"
+        component={PatternAnalyticsScreen}
+        options={{
+          ...stackScreenOptions,
+          title: 'Pattern Analytics',
+          presentation: 'card',
+        }}
+      />
+      {/* Feature Screens (More menu) */}
       <Stack.Screen
         name="SocialEvent"
         component={SocialEventScreen}
-        options={{ presentation: 'card' }}
+        options={{
+          ...stackScreenOptions,
+          title: 'Social Events',
+          presentation: 'card',
+        }}
       />
       <Stack.Screen
         name="PriceHistory"
         component={PriceHistoryScreen}
-        options={{ presentation: 'card' }}
+        options={{
+          ...stackScreenOptions,
+          title: 'Price History',
+          presentation: 'card',
+        }}
       />
       <Stack.Screen
         name="StoreOptimizer"
         component={StoreOptimizerScreen}
-        options={{ presentation: 'card' }}
+        options={{
+          ...stackScreenOptions,
+          title: 'Store Optimizer',
+          presentation: 'card',
+        }}
       />
     </Stack.Navigator>
   );
